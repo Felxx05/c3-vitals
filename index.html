@@ -251,7 +251,7 @@ button{font:inherit;color:inherit;cursor:pointer}
       <button class="pbtn sm m2" id="pAux" aria-label="Taste"></button>
       <div class="model">BOS<b>S</b></div>
     </div>
-    <div class="hint" id="pHint">Grüner Knopf: Alarm quittieren · oberer grauer Knopf: Memory</div>
+    <div class="hint" id="pHint">Grüner Knopf: Alarm quittieren · oberer grauer Knopf: Memory · unterer grauer Knopf: Probealarm</div>
   </div>
 </section>
 
@@ -534,7 +534,7 @@ function renderPager(){
   if(pg.mode==="standby"){
     d.innerHTML=st+`<div class="ric">${RIC}</div><div class="clk">${pad(now.getHours())}:${pad(now.getMinutes())}</div><div class="dat">${now.toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit",year:"numeric"})}</div>`;
   }else{
-    const m=pg.mode==="info"?pg.msgs[pg.infoIdx]:pg.msgs[0];
+    const m=pg.test&&pg.mode!=="info"?pg.test:pg.mode==="info"?pg.msgs[pg.infoIdx]:pg.msgs[0];
     if(!m){d.innerHTML=st+`<div class="ric">Keine Meldungen</div><div class="dat"></div>`;return}
     const t=new Date(m.at*1000);
     const title=pg.mode==="alarm"?"ALARM":pg.mode==="info"?`MEM ${pg.infoIdx+1}/${pg.msgs.length}`:"EINSATZ";
@@ -551,7 +551,9 @@ function alarmTone(){
   let t=c.currentTime+0.05;
   for(let r=0;r<3;r++){[2100,2500,2950].forEach(f=>{tone(t,0.11,master,{f,type:"square",gain:0.16});t+=0.13});t+=0.08}
 }
-function startAlarm(){
+function startAlarm(test){
+  // Probealarm wird nicht im Speicher abgelegt
+  pg.test=test?{at:Date.now()/1000,text:"PROBEALARM\nMelder in Ordnung.\nGrüner Knopf: quittieren"}:null;
   pg.mode="alarm";pg.infoIdx=0;go("vPg");renderPager();
   clearInterval(pg.alarmTimer);alarmTone();pg.alarmTimer=setInterval(alarmTone,1700);
   try{navigator.vibrate&&navigator.vibrate([400,200,400,200,400])}catch(e){}
@@ -561,7 +563,7 @@ function stopAlarm(){clearInterval(pg.alarmTimer);pg.alarmTimer=null}
 // Grüner Knopf: Alarm quittieren (Einsatz bleibt sichtbar), danach zurück in Bereitschaft
 function pagerBig(){
   if(pg.mode==="alarm"){stopAlarm();pg.mode="read";beep(2600,0.05)}
-  else if(pg.mode!=="standby"){pg.mode="standby";beep(2600,0.04)}
+  else if(pg.mode!=="standby"){pg.mode="standby";pg.test=null;beep(2600,0.04)}
   else beep(2600,0.03);
   light();renderPager();
 }
@@ -569,6 +571,7 @@ function pagerBig(){
 function pagerInfo(){
   if(pg.mode==="alarm")return;
   beep(2600,0.03);light();
+  pg.test=null;
   if(pg.mode!=="info"){pg.mode="info";pg.infoIdx=0}
   else if(pg.infoIdx+1<pg.msgs.length)pg.infoIdx++;
   else pg.mode="standby";
@@ -653,7 +656,7 @@ document.addEventListener("click",e=>{
     case "stopBtn":stopVoice();return;
     case "pBig":pagerBig();return;
     case "pInfo":pagerInfo();return;
-    case "pAux":beep(2600,0.03);light();renderPager();return;
+    case "pAux":if(pg.mode!=="alarm"){unlock();startAlarm(true)}return;
     case "arm":unlock();setTimeout(armCheck,200);return;
   }
   if(b.dataset.reg){if(region!==b.dataset.reg){stopVoice();region=b.dataset.reg}bodySVG();return}
