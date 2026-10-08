@@ -531,35 +531,15 @@ function heartCycle(v,t){
   if(f==="reiben"){[t-0.08,t+sys*0.45,t+sys+0.12].forEach(s=>{for(let i=0;i<4;i++)noise(s+i*0.018,0.025,out,{f:rnd(500,900),q:0.8,gain:rnd(0.18,0.3)*w,attack:0.003,release:0.012})})}
   return rr;
 }
+// Bauch: die Aufnahme des Befunds läuft ohne Pause in Schleife; „Keine“ bleibt still
+const BOWEL_REC={normal:"bowel_normal",spaerlich:"bowel_hypo",gesteigert:"bowel_hyper",klingend:"bowel_hohl"};
 function bowelEvent(v,t){
-  const f=S.abdomenSound||"normal",out=v.out;
-  if(f==="stille")return 3;
-  const gr=SND.bowel_grains,kl=SND.bowel_klingend;
-  if(f==="klingend"&&kl){playCycle(kl,0,t,kl.len,2,out);return kl.len-0.05}
-  if(gr&&f!=="klingend"){
-    // einzelne echte Darmgeräusche, Häufigkeit je nach Befund
-    const n=gr.marks.length,i=Math.floor(Math.random()*n);
-    playCycle(gr,i,t,9,(f==="spaerlich"?0.9:rnd(0.9,1.5))*(f==="gesteigert"?1.1:1),out);
-    const len=gr.ends[i]-gr.marks[i];
-    return len+(f==="gesteigert"?rnd(0.1,1.2):f==="spaerlich"?rnd(12,25):rnd(2.5,7));
-  }
-  const gurgle=(s,len,f0,f1,gain)=>{
-    const flt=noise(s,len,out,{f:f0,q:7,gain,shape:(g,t0,d,gn)=>{g.setValueAtTime(0,t0);
-      // blubbernd: mehrere kurze Bläschen
-      let x=t0;while(x<t0+d){const b=rnd(0.02,0.07);g.linearRampToValueAtTime(gn*rnd(0.3,1),x+b*0.3);g.linearRampToValueAtTime(gn*0.1,x+b);x+=b+rnd(0,0.04)}
-      g.linearRampToValueAtTime(0,t0+d+0.02)}});
-    flt.frequency.setValueAtTime(f0,s);flt.frequency.linearRampToValueAtTime(f1,s+len);
-  };
-  if(f==="normal"){gurgle(t,rnd(0.3,1.1),rnd(180,320),rnd(300,600),0.55);return rnd(1.5,5)}
-  if(f==="gesteigert"){gurgle(t,rnd(0.6,1.8),rnd(140,260),rnd(250,520),0.8);if(Math.random()<0.5)gurgle(t+rnd(0.2,0.6),rnd(0.3,0.8),rnd(200,350),rnd(350,650),0.6);return rnd(0.4,1.4)}
-  if(f==="klingend"){
-    // hochgestellt, metallisch klingend (Plätschern, „Tropfen in der Flasche“)
-    const n=2+Math.floor(Math.random()*4);for(let i=0;i<n;i++){const fr=rnd(1300,2600);tone(t+i*rnd(0.06,0.16),0.25,out,{f:fr,f2:fr*rnd(0.95,1.1),gain:rnd(0.08,0.16),attack:0.002,decay:rnd(0.04,0.09)})}
-    if(Math.random()<0.6)gurgle(t+0.3,rnd(0.3,0.7),rnd(400,700),rnd(700,1100),0.4);
-    return rnd(0.8,2.6);
-  }
-  if(f==="spaerlich"){gurgle(t,rnd(0.2,0.5),rnd(200,300),rnd(260,420),0.35);return rnd(9,18)}
-  return 2;
+  const f=S.abdomenSound||"normal";
+  if(f==="stille")return 1;
+  const s=SND[BOWEL_REC[f]||"bowel_normal"];
+  if(!s)return 0.5; // Aufnahme lädt noch
+  playCycle(s,0,t,s.len,1.4,v.out);
+  return s.len-0.03;
 }
 
 // ---------- Melder ----------

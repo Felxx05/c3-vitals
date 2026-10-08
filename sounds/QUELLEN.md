@@ -22,5 +22,7 @@ geschützt und nicht frei lizenziert (unten jeweils vermerkt).
 | heart_as | Aortenstenose | University of Michigan Heart Sound & Murmur Library, „Aortic area, systolic murmur, absent S2“ | CC BY-SA 3.0, Regents of the University of Michigan |
 | heart_ai | Aorteninsuffizienz | University of Michigan Heart Sound & Murmur Library, „Aortic area, early diastolic murmur“ | CC BY-SA 3.0, Regents of the University of Michigan |
 | heart_reiben | Perikardreiben | MSD Manual (Merck), „Pericardial friction rub“, Aufnahme von Jules Constant, MD | geschützt |
-| bowel_grains | Darmgeräusche normal, gesteigert, spärlich | Wikimedia Commons: „Borborigmos.wav“ (Surinameri) und „Borborigmos por hambre.wav“ (JillhemBartolio) | CC BY-SA 4.0 |
-| bowel_klingend | Hochgestellt, klingend | Wikimedia Commons: „SBOOgg.ogg“, Dünndarmileus, James Heilman, MD | CC BY-SA 3.0 |
+| bowel_normal | Darmgeräusche normal | von Felix bereitgestellt („Normal.mp3“) | Rechte bei der Quelle |
+| bowel_hypo | Hypoaktiv | von Felix bereitgestellt („Hypoactive.mp3“) | Rechte bei der Quelle |
+| bowel_hyper | Hyperaktiv | von Felix bereitgestellt („Hyperactive.mp3“) | Rechte bei der Quelle |
+| bowel_hohl | Hohl, hochgestellt | von Felix bereitgestellt („Hohl_Hochfrequent.mp3“) | Rechte bei der Quelle |
