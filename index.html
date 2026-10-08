@@ -489,46 +489,28 @@ function lungCycle(v,t){
 }
 
 const PULSELESS=["vf","pvt","polyVT","torsade","pea","asystole"];
-const HW={ // Lautstärke je Abhörpunkt: S1, S2, Geräusch
- normal:{},leise:{},
+// Lautstärke des Befunds je Abhörpunkt (am typischen Punkt am lautesten)
+const HW={normal:{},
  as:{ao:1,pu:0.6,erb:0.75,tr:0.45,mi:0.55},
  mi:{ao:0.3,pu:0.3,erb:0.6,tr:0.5,mi:1},
  ai:{ao:0.7,pu:0.5,erb:1,tr:0.5,mi:0.3},
- s3:{ao:0.35,pu:0.35,erb:0.5,tr:0.7,mi:1},
- reiben:{ao:0.6,pu:0.7,erb:1,tr:0.9,mi:0.7}};
-const HEART_REC={normal:"heart_normal",leise:"heart_normal",as:"heart_as",mi:"heart_mi",ai:"heart_ai",s3:"heart_s3",reiben:"heart_reiben"};
-function heartThump(t,out,low,gain){
-  tone(t,0.14,out,{f:low,f2:low*0.8,gain,attack:0.008,decay:low<60?0.045:0.03});
-  tone(t+0.005,0.1,out,{f:low*1.6,gain:gain*0.45,attack:0.006,decay:0.025});
-  noise(t,0.06,out,{type:"lowpass",f:180,q:0.7,gain:gain*0.5,attack:0.004,release:0.04});
-}
+ s3:{ao:0.35,pu:0.35,erb:0.5,tr:0.7,mi:1}};
+const HEART_REC={normal:"heart_normal",as:"heart_as",mi:"heart_mi",ai:"heart_ai",s3:"heart_s3"};
+// Befunde älterer Steuerungen bzw. Szenarien
+const HEART_OLD={leise:"normal",reiben:"normal"};
 function heartCycle(v,t){
-  const p=v.p,f=S.heartSound||"normal",out=v.out;
+  const p=v.p,out=v.out;let f=S.heartSound||"normal";f=HEART_OLD[f]||f;
   const pulseless=PULSELESS.includes(S.rhythm)||S.hasPulse===false;
   let hr=+S.heartRate||75;if(pulseless||hr<10)return 1;
   let rr=60/hr;
   if(S.rhythm==="afib"||S.rhythm==="afibLBBB"||S.arrhythmic)rr*=rnd(0.65,1.45);
-  const s=SND[HEART_REC[f]];
-  if(s){
-    // ein echter Herzschlag ab S1; die Diastole wird bei schneller HF gekürzt
-    const i=nextIdx(v,"hi",s),src=(i+1<s.marks.length?s.marks[i+1]:s.len)-s.marks[i];
-    const rate=Math.min(1.2,Math.max(0.9,Math.sqrt(src/rr)));
-    const w=(HW[f]||{})[p.id];
-    playCycle(s,i,t,rr,(f==="leise"?0.3:1)*(w==null?1:0.55+0.45*w),out,rate);
-    return rr;
-  }
-  const sys=Math.min(0.36,0.12+0.25*Math.min(rr,1));
-  const vol=f==="leise"?0.3:1;
-  const s1w={ao:0.75,pu:0.8,erb:0.85,tr:1,mi:1}[p.id],s2w={ao:1,pu:1,erb:0.85,tr:0.7,mi:0.65}[p.id];
-  heartThump(t,out,48,0.9*vol*s1w);
-  // S2 mit leichter physiologischer Spaltung in der Einatmung
-  heartThump(t+sys,out,68,0.65*vol*s2w);
-  const w=(HW[f]||{})[p.id]||0;
-  if(f==="as"){noise(t+0.05,sys-0.08,out,{f:360,q:1.4,gain:0.42*w,shape:(g,t0,d,gain)=>{g.setValueAtTime(0,t0);g.linearRampToValueAtTime(gain,t0+d*0.45);g.linearRampToValueAtTime(0,t0+d)}})}
-  if(f==="mi"){noise(t+0.03,sys-0.04,out,{f:520,q:2,gain:0.3*w,attack:0.03,release:0.03})}
-  if(f==="ai"){noise(t+sys+0.03,Math.min(0.42,rr-sys-0.12),out,{f:720,q:2.2,gain:0.3*w,shape:(g,t0,d,gain)=>{g.setValueAtTime(0,t0);g.linearRampToValueAtTime(gain,t0+0.02);g.exponentialRampToValueAtTime(0.001,t0+d)}})}
-  if(f==="s3"&&rr-sys>0.3){tone(t+sys+0.15,0.12,out,{f:36,gain:0.6*w,attack:0.015,decay:0.04})}
-  if(f==="reiben"){[t-0.08,t+sys*0.45,t+sys+0.12].forEach(s=>{for(let i=0;i<4;i++)noise(s+i*0.018,0.025,out,{f:rnd(500,900),q:0.8,gain:rnd(0.18,0.3)*w,attack:0.003,release:0.012})})}
+  const s=SND[HEART_REC[f]||"heart_normal"];
+  if(!s)return Math.min(rr,0.5); // Aufnahme lädt noch
+  // ein echter Herzschlag ab S1; die Diastole wird bei schneller HF gekürzt
+  const i=nextIdx(v,"hi",s),src=(i+1<s.marks.length?s.marks[i+1]:s.len)-s.marks[i];
+  const rate=Math.min(1.2,Math.max(0.9,Math.sqrt(src/rr)));
+  const w=(HW[f]||{})[p.id];
+  playCycle(s,i,t,rr,w==null?1:0.55+0.45*w,out,rate);
   return rr;
 }
 // Bauch: die Aufnahme des Befunds läuft ohne Pause in Schleife; „Keine“ bleibt still
