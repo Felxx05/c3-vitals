@@ -110,28 +110,38 @@ button{font:inherit;color:inherit;cursor:pointer}
 .nowplay{min-height:52px;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:600;text-align:center}
 .nowplay button{border:0;background:var(--key);border-radius:10px;padding:8px 14px;font-weight:700}
 
-/* Melder */
-.pager{width:min(300px,80vw);background:linear-gradient(160deg,#3a3d42,#17181b);border-radius:28px;padding:22px 18px 26px;box-shadow:inset 0 2px 0 #fff2,0 18px 40px #000c;display:flex;flex-direction:column;align-items:center;gap:16px;position:relative}
-.pager .led{position:absolute;top:12px;right:22px;width:12px;height:12px;border-radius:50%;background:#401010;box-shadow:inset 0 1px 2px #000}
+.arm{position:fixed;inset:0;z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;border:0;background:#000d;color:#fff;padding:30px;text-align:center;font:600 16px -apple-system}
+.arm.show{display:flex}
+.arm b{font-size:24px;color:#9be05a}
+/* Melder (Bauform wie ein BOSS-Funkmeldeempfänger) */
+.pager{--w:min(340px,84vw);width:var(--w);aspect-ratio:300/420;position:relative;border-radius:calc(var(--w)*.09);background:linear-gradient(180deg,#45474b,#2e3034 60%,#26282b);box-shadow:inset 0 2px 1px #ffffff26,inset 0 -3px 6px #0008,0 22px 40px #000b;container-type:inline-size}
+.pager .clip{position:absolute;left:50%;top:-2.2%;width:34%;height:4%;transform:translateX(-50%);border-radius:6px 6px 0 0;background:linear-gradient(#55575b,#3a3c40)}
+.pager .face{position:absolute;left:5%;right:5%;top:3.5%;height:45%;border-radius:7cqw 7cqw 5cqw 5cqw;background:linear-gradient(180deg,#6b6e73,#55585c);box-shadow:inset 0 1px 1px #fff4,inset 0 -2px 3px #0005}
+.pager .led{position:absolute;right:7%;top:3.6%;width:3.2cqw;height:3.2cqw;border-radius:50%;background:#3a1414;box-shadow:inset 0 1px 2px #000}
 .pager.alarm .led{animation:led .5s steps(1) infinite}
-@keyframes led{0%{background:#ff2a2a;box-shadow:0 0 14px #ff2a2a}50%{background:#401010;box-shadow:none}}
-.pager .name{font:800 13px -apple-system;letter-spacing:3px;color:#9aa0a8}
-.pdisp{width:100%;height:190px;background:#1d2a20;border-radius:10px;box-shadow:inset 0 3px 8px #000a;padding:10px 12px;font-family:ui-monospace,Menlo,monospace;color:#cfe8c8;display:flex;flex-direction:column;overflow:hidden;transition:background .15s}
-.pdisp.lit{background:#ffb54a;color:#2a1600}
-.pager.alarm .pdisp{animation:lit .5s steps(1) infinite}
-@keyframes lit{0%{background:#ffb54a;color:#2a1600}50%{background:#1d2a20;color:#cfe8c8}}
-.pdisp .st{display:flex;justify-content:space-between;font-size:12px;opacity:.85}
-.pdisp .st svg{width:22px;height:12px;stroke:currentColor;fill:none;stroke-width:1.6}
-.pdisp .ric{font:700 19px/1.2 ui-monospace,Menlo,monospace;text-align:center;margin:auto 0 4px}
-.pdisp .clk{font:700 30px/1 ui-monospace,Menlo,monospace;text-align:center;margin-bottom:auto}
-.pdisp .msg{font:600 15px/1.3 ui-monospace,Menlo,monospace;white-space:pre-wrap;overflow-y:auto;flex:1;margin-top:6px;-webkit-user-select:text;user-select:text}
-.pdisp .hdr{font:800 14px ui-monospace,Menlo,monospace;display:flex;justify-content:space-between;border-bottom:1px solid currentColor;padding-bottom:3px}
-.bigbtn{width:116px;height:116px;border-radius:50%;border:0;background:radial-gradient(circle at 40% 35%,#5a5f66,#26282c);box-shadow:0 6px 0 #0b0c0d,0 10px 18px #000b,inset 0 2px 0 #fff2;display:flex;align-items:center;justify-content:center}
-.bigbtn:active{transform:translateY(5px);box-shadow:0 1px 0 #0b0c0d,inset 0 2px 0 #fff2}
-.bigbtn span{width:44px;height:44px;border-radius:50%;border:3px solid #8a9099}
-.pkeys{display:flex;gap:16px;align-items:center}
-.skey{border:0;border-radius:14px;background:linear-gradient(#45494f,#2a2c30);box-shadow:0 4px 0 #0b0c0d;color:#cfd3d8;font:700 13px -apple-system;padding:10px 14px}
-.skey:active{transform:translateY(3px);box-shadow:0 1px 0 #0b0c0d}
+@keyframes led{0%{background:#ff3030;box-shadow:0 0 4cqw #ff3030}50%{background:#3a1414;box-shadow:inset 0 1px 2px #000}}
+.pdisp{position:absolute;left:6%;right:6%;top:6%;height:80%;border-radius:2.5cqw;background:#2a2c2f;padding:2.2cqw;box-shadow:inset 0 2px 4px #000c}
+.pdisp .lcd{width:100%;height:100%;border-radius:1.5cqw;background:linear-gradient(180deg,#c3c8c0,#b3b8ae);color:#1c1f1a;font-family:ui-monospace,Menlo,monospace;padding:2.2cqw 3cqw;display:flex;flex-direction:column;overflow:hidden;box-shadow:inset 0 2px 5px #0006}
+.pager.lit .lcd{background:linear-gradient(180deg,#c6f08a,#a9dc66)}
+.pager.alarm .lcd{animation:lit .5s steps(1) infinite}
+@keyframes lit{0%{background:linear-gradient(180deg,#c6f08a,#a9dc66)}50%{background:linear-gradient(180deg,#c3c8c0,#b3b8ae)}}
+.lcd .st{display:flex;justify-content:space-between;align-items:center;font-size:4cqw;font-weight:700}
+.lcd .st svg{width:7cqw;height:4cqw;stroke:currentColor;fill:none;stroke-width:1.6}
+.lcd .ric{font:800 5.6cqw/1.15 ui-monospace,Menlo,monospace;text-align:center;margin:auto 0 1cqw}
+.lcd .clk{font:800 11cqw/1 ui-monospace,Menlo,monospace;text-align:center}
+.lcd .dat{font-size:4cqw;text-align:center;margin:1cqw 0 auto;font-weight:700}
+.lcd .hdr{font:800 4.6cqw ui-monospace,Menlo,monospace;display:flex;justify-content:space-between;border-bottom:.5cqw solid currentColor;padding-bottom:.8cqw}
+.lcd .msg{font:700 5cqw/1.25 ui-monospace,Menlo,monospace;white-space:pre-wrap;overflow-y:auto;flex:1;margin-top:1.2cqw;-webkit-user-select:text;user-select:text}
+.pager .brand{position:absolute;left:0;right:0;top:50.5%;text-align:center;color:#f2f2f2;font:800 5.4cqw -apple-system,Helvetica,Arial;letter-spacing:.6cqw}
+.pager .brand:before{content:"";display:block;width:34%;height:1.6cqw;margin:0 auto 1cqw;border-top:.7cqw solid #e2232a;border-radius:50% 50% 0 0}
+.pbtn{position:absolute;border:0;padding:0;border-radius:50%;-webkit-tap-highlight-color:transparent}
+.pbtn.ok{left:12%;top:61%;width:26%;aspect-ratio:1;background:radial-gradient(circle at 40% 35%,#9be05a,#6cb534 55%,#4f8f22);box-shadow:0 1.6cqw 0 #2b4d12,0 3cqw 5cqw #000a,inset 0 1px 1px #fff8}
+.pbtn.sm{width:15%;aspect-ratio:1;background:radial-gradient(circle at 40% 35%,#6a6d72,#45484c 60%,#35373a);box-shadow:0 1.2cqw 0 #1a1b1d,0 2cqw 4cqw #0009,inset 0 1px 1px #fff4}
+.pbtn.m1{right:13%;top:61%}.pbtn.m2{right:27%;top:76%}
+.pbtn.ok:active{transform:translateY(1.2cqw);box-shadow:0 .4cqw 0 #2b4d12,inset 0 1px 1px #fff8}
+.pbtn.sm:active{transform:translateY(1cqw);box-shadow:0 .2cqw 0 #1a1b1d}
+.pager .model{position:absolute;left:0;right:0;bottom:4.5%;text-align:center;font:900 italic 7cqw -apple-system,Helvetica,Arial;color:#111;letter-spacing:.3cqw;text-shadow:0 1px 0 #fff2}
+.pager .model b{color:#e2232a}
 
 /* Hochformat */
 #rotate{position:fixed;inset:0;background:#000;display:none;align-items:center;justify-content:center;text-align:center;z-index:99;padding:20px;color:var(--sub)}
@@ -143,6 +153,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 <body>
 
 <div id="rotate"><div><b style="color:var(--text);font-size:18px">FM Vitals</b><br>Bitte das Gerät hochkant halten.</div></div>
+<button id="arm" class="arm"><b>Melder scharf schalten</b><span>Einmal tippen, damit Alarmton und Geräusche abgespielt werden können.</span></button>
 <div id="toast" role="status"></div>
 
 <!-- Koppeln -->
@@ -231,13 +242,16 @@ button{font:inherit;color:inherit;cursor:pointer}
   <div class="top"><button class="back" data-go="vHome"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Zurück</button><h1>Melder</h1></div>
   <div class="stage">
     <div class="pager" id="pager">
+      <div class="clip"></div>
+      <div class="face"><div class="pdisp"><div class="lcd" id="pDisp"></div></div></div>
       <div class="led"></div>
-      <div class="name">B O S S</div>
-      <div class="pdisp" id="pDisp"></div>
-      <button class="bigbtn" id="pBig" aria-label="Quittieren"><span></span></button>
-      <div class="pkeys"><button class="skey" id="pInfo">Meldungen</button><button class="skey" id="pLight">Licht</button></div>
+      <div class="brand">FM 112</div>
+      <button class="pbtn ok" id="pBig" aria-label="Quittieren"></button>
+      <button class="pbtn sm m1" id="pInfo" aria-label="Memory"></button>
+      <button class="pbtn sm m2" id="pAux" aria-label="Taste"></button>
+      <div class="model">BOS<b>S</b></div>
     </div>
-    <div class="hint" id="pHint">Großer Knopf: Alarm quittieren · „Meldungen“: letzte Einsätze ansehen</div>
+    <div class="hint" id="pHint">Grüner Knopf: Alarm quittieren · oberer grauer Knopf: Memory</div>
   </div>
 </section>
 
@@ -366,14 +380,10 @@ function thMemory(){
 // ---------- Auskultation ----------
 // Punkte: x/y im Körperbild, Seite aus Sicht des Patienten (r/l), Zone bzw. Name
 const POINTS={
- lung_front:[{id:"rA",x:112,y:128,s:"r",z:"apex",n:"Lungenspitze rechts"},{id:"lA",x:188,y:128,s:"l",z:"apex",n:"Lungenspitze links"},
-  {id:"rM",x:104,y:178,s:"r",z:"mid",n:"Oberfeld rechts"},{id:"lM",x:196,y:178,s:"l",z:"mid",n:"Oberfeld links"},
-  {id:"rB",x:100,y:228,s:"r",z:"base",n:"Unterfeld rechts"},{id:"lB",x:200,y:228,s:"l",z:"base",n:"Unterfeld links"},
-  {id:"rL",x:76,y:212,s:"r",z:"base",n:"Seitlich rechts"},{id:"lL",x:224,y:212,s:"l",z:"base",n:"Seitlich links"}],
- lung_back:[{id:"lA",x:118,y:130,s:"l",z:"apex",n:"Oben links"},{id:"rA",x:182,y:130,s:"r",z:"apex",n:"Oben rechts"},
-  {id:"lM",x:112,y:180,s:"l",z:"mid",n:"Mitte links"},{id:"rM",x:188,y:180,s:"r",z:"mid",n:"Mitte rechts"},
-  {id:"lB",x:110,y:232,s:"l",z:"base",n:"Basal links"},{id:"rB",x:190,y:232,s:"r",z:"base",n:"Basal rechts"},
-  {id:"lU",x:116,y:272,s:"l",z:"base",n:"Lungengrenze links"},{id:"rU",x:184,y:272,s:"r",z:"base",n:"Lungengrenze rechts"}],
+ lung_front:[{id:"rA",x:112,y:128,s:"r",z:"apex",n:"Apikal rechts"},{id:"lA",x:188,y:128,s:"l",z:"apex",n:"Apikal links"},
+  {id:"rB",x:96,y:226,s:"r",z:"base",n:"Basal rechts"},{id:"lB",x:204,y:226,s:"l",z:"base",n:"Basal links"}],
+ lung_back:[{id:"lA",x:118,y:130,s:"l",z:"apex",n:"Apikal links (Rücken)"},{id:"rA",x:182,y:130,s:"r",z:"apex",n:"Apikal rechts (Rücken)"},
+  {id:"lB",x:112,y:252,s:"l",z:"base",n:"Basal links (Rücken)"},{id:"rB",x:188,y:252,s:"r",z:"base",n:"Basal rechts (Rücken)"}],
  heart:[{id:"ao",x:136,y:138,n:"Aortenklappe (2. ICR rechts)"},{id:"pu",x:164,y:138,n:"Pulmonalklappe (2. ICR links)"},
   {id:"erb",x:164,y:162,n:"Erb-Punkt (3. ICR links)"},{id:"tr",x:160,y:188,n:"Trikuspidalklappe (4. ICR links)"},{id:"mi",x:194,y:208,n:"Mitralklappe (5. ICR, Herzspitze)"}],
  bowel:[{id:"ruq",x:124,y:282,n:"Rechter Oberbauch"},{id:"luq",x:176,y:282,n:"Linker Oberbauch"},{id:"rlq",x:124,y:340,n:"Rechter Unterbauch"},{id:"llq",x:176,y:340,n:"Linker Unterbauch"},{id:"umb",x:150,y:311,n:"Nabel"}]
@@ -538,62 +548,73 @@ function bowelEvent(v,t){
 }
 
 // ---------- Melder ----------
-const pg={mode:"standby",msgs:stored("vitMsgs",[]),infoIdx:0,alarmTimer:null,light:false};
+const pg={mode:"standby",msgs:stored("vitMsgs",[]),infoIdx:0,alarmTimer:null,lightTimer:null};
 function pad(n){return String(n).padStart(2,"0")}
 function renderPager(){
   const d=$("pDisp"),now=new Date(),P=$("pager");
   P.classList.toggle("alarm",pg.mode==="alarm");
-  d.classList.toggle("lit",pg.mode!=="alarm"&&(pg.light||pg.mode!=="standby"));
-  const st=`<div class="st"><span><svg viewBox="0 0 22 12"><path d="M2 10h2M6 8v2M10 6v4M14 4v6M18 2v8"/></svg></span><span>${pad(now.getHours())}:${pad(now.getMinutes())}</span><span><svg viewBox="0 0 22 12"><rect x="1" y="2" width="17" height="8" rx="1.5"/><path d="M20 5v2"/><rect x="3" y="4" width="11" height="4" fill="currentColor" stroke="none"/></svg></span></div>`;
+  P.classList.toggle("lit",pg.mode!=="alarm"&&!!pg.lightTimer);
+  const st=`<div class="st"><svg viewBox="0 0 22 12"><path d="M2 10h2M6 8v2M10 6v4M14 4v6M18 2v8"/></svg><span>${pad(now.getHours())}:${pad(now.getMinutes())}</span><svg viewBox="0 0 22 12"><rect x="1" y="2" width="17" height="8" rx="1.5"/><path d="M20 5v2"/><rect x="3" y="4" width="11" height="4" fill="currentColor" stroke="none"/></svg></div>`;
   if(pg.mode==="standby"){
-    d.innerHTML=st+`<div class="ric">${RIC}</div><div class="clk">${pad(now.getHours())}:${pad(now.getMinutes())}</div><div style="text-align:center;font-size:12px;opacity:.8">${now.toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit",year:"numeric"})}</div>`;
+    d.innerHTML=st+`<div class="ric">${RIC}</div><div class="clk">${pad(now.getHours())}:${pad(now.getMinutes())}</div><div class="dat">${now.toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit",year:"numeric"})}</div>`;
   }else{
     const m=pg.mode==="info"?pg.msgs[pg.infoIdx]:pg.msgs[0];
-    if(!m){d.innerHTML=st+`<div class="ric">Keine Meldungen</div><div class="clk"></div>`;return}
+    if(!m){d.innerHTML=st+`<div class="ric">Keine Meldungen</div><div class="dat"></div>`;return}
     const t=new Date(m.at*1000);
-    const title=pg.mode==="alarm"?"ALARM":pg.mode==="info"?`MELDUNG ${pg.infoIdx+1}/${pg.msgs.length}`:"EINSATZ";
-    d.innerHTML=`<div class="hdr"><span>${title}</span><span>${pad(t.getHours())}:${pad(t.getMinutes())}</span></div><div style="font-size:12px;margin-top:4px">${RIC}</div><div class="msg">${esc(m.text)}</div>`;
+    const title=pg.mode==="alarm"?"ALARM":pg.mode==="info"?`MEM ${pg.infoIdx+1}/${pg.msgs.length}`:"EINSATZ";
+    d.innerHTML=`<div class="hdr"><span>${title}</span><span>${pad(t.getHours())}:${pad(t.getMinutes())}</span></div><div style="font-size:3.6cqw;font-weight:700;margin-top:1cqw">${RIC}</div><div class="msg">${esc(m.text)}</div>`;
   }
 }
 function esc(t){return String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 setInterval(()=>{if(view==="vPg"&&pg.mode==="standby")renderPager()},15000);
+// Beleuchtung nach Tastendruck kurz an, wie am echten Gerät
+function light(){clearTimeout(pg.lightTimer);pg.lightTimer=setTimeout(()=>{pg.lightTimer=null;renderPager()},8000)}
 // Alarmton: wiederkehrende, ansteigende Tonfolge wie beim Funkmeldeempfänger
 function alarmTone(){
-  const c=audio();if(!c)return;if(c.state==="suspended")c.resume();
+  const c=audio();if(!c)return;if(c.state!=="running")c.resume();
   let t=c.currentTime+0.05;
   for(let r=0;r<3;r++){[2100,2500,2950].forEach(f=>{tone(t,0.11,master,{f,type:"square",gain:0.16});t+=0.13});t+=0.08}
 }
 function startAlarm(){
-  pg.mode="alarm";go("vPg");renderPager();
+  pg.mode="alarm";pg.infoIdx=0;go("vPg");renderPager();
   clearInterval(pg.alarmTimer);alarmTone();pg.alarmTimer=setInterval(alarmTone,1700);
   try{navigator.vibrate&&navigator.vibrate([400,200,400,200,400])}catch(e){}
+  armCheck();
 }
 function stopAlarm(){clearInterval(pg.alarmTimer);pg.alarmTimer=null}
+// Grüner Knopf: Alarm quittieren (Einsatz bleibt sichtbar), danach zurück in Bereitschaft
 function pagerBig(){
   if(pg.mode==="alarm"){stopAlarm();pg.mode="read";beep(2600,0.05)}
-  else if(pg.mode==="read"||pg.mode==="info"){pg.mode="standby";beep(2600,0.04)}
-  else{pg.light=!pg.light;beep(2600,0.03)}
-  renderPager();
+  else if(pg.mode!=="standby"){pg.mode="standby";beep(2600,0.04)}
+  else beep(2600,0.03);
+  light();renderPager();
 }
+// Memory: letzte Einsätze nacheinander, danach wieder Bereitschaft
 function pagerInfo(){
   if(pg.mode==="alarm")return;
-  beep(2600,0.03);
-  if(!pg.msgs.length){pg.mode="info";pg.infoIdx=0}
-  else if(pg.mode!=="info"){pg.mode="info";pg.infoIdx=0}
-  else pg.infoIdx=(pg.infoIdx+1)%pg.msgs.length;
+  beep(2600,0.03);light();
+  if(pg.mode!=="info"){pg.mode="info";pg.infoIdx=0}
+  else if(pg.infoIdx+1<pg.msgs.length)pg.infoIdx++;
+  else pg.mode="standby";
   renderPager();
 }
+// Ein Einsatz ist eindeutig über seinen Auslösezeitpunkt, so stört ein neu verbundener Monitor (Zähler wieder bei 1) nicht
 function handlePager(){
-  const id=+S.pagerAlarmID||0;if(!id)return;
-  const key="vitPagerId_"+code,last=stored(key,null);
-  if(last===id)return;
-  store(key,id);
-  const fresh=Date.now()/1000-(+S.pagerAlarmAt||0)<300;
-  if(!pg.msgs.some(m=>m.id===id)){pg.msgs.unshift({id,text:S.pagerText||"",at:+S.pagerAlarmAt||Date.now()/1000});pg.msgs=pg.msgs.slice(0,3);store("vitMsgs",pg.msgs)}
-  // Erstes Öffnen mit einem alten Einsatz: nur speichern, nicht alarmieren
-  if(last!==null&&fresh)startAlarm();
-  else if(last===null&&fresh)startAlarm();
+  const at=+S.pagerAlarmAt||0;if(!(+S.pagerAlarmID)||!at)return;
+  const key="vitPagerAt_"+code,last=+stored(key,0)||0;
+  if(Math.abs(last-at)<0.001)return;
+  store(key,at);
+  if(!pg.msgs.some(m=>Math.abs(m.at-at)<0.001)){pg.msgs.unshift({at,text:S.pagerText||""});pg.msgs=pg.msgs.slice(0,3);store("vitMsgs",pg.msgs)}
+  if(Date.now()/1000-at<300)startAlarm();
 }
+// iOS lässt Ton erst nach einer Berührung zu und sperrt ihn nach Sperrbildschirm wieder.
+// Dann erscheint ein Hinweis, der mit einem Tippen den Melder scharf schaltet.
+function armCheck(){
+  const c=ctx,ok=c&&c.state==="running";
+  $("arm").classList.toggle("show",!!code&&!ok);
+}
+setInterval(armCheck,1500);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(armCheck,300)});
 
 // ---------- Verbindung (MQTT über öffentliche Broker, wie die Steuerseite) ----------
 let code=null,client=null,brokerIndex=0,everConnected=false,brokerTimer=null,lastSeen=0,monitorName="FM 112";
@@ -656,7 +677,8 @@ document.addEventListener("click",e=>{
     case "stopBtn":stopVoice();return;
     case "pBig":pagerBig();return;
     case "pInfo":pagerInfo();return;
-    case "pLight":pg.light=!pg.light;renderPager();return;
+    case "pAux":beep(2600,0.03);light();renderPager();return;
+    case "arm":unlock();setTimeout(armCheck,200);return;
   }
   if(b.dataset.reg){if(region!==b.dataset.reg){stopVoice();region=b.dataset.reg}bodySVG();return}
   if(b.dataset.side){if(side!==b.dataset.side){stopVoice();side=b.dataset.side}bodySVG();return}
