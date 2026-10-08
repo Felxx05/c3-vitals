@@ -10,14 +10,12 @@ geschützt und nicht frei lizenziert (unten jeweils vermerkt).
 
 | Datei | Befund in der App | Quelle | Lizenz |
 |---|---|---|---|
-| lung_normal | Vesikulär, abgeschwächt | 3M Littmann Lehrbibliothek, „Normal vesicular sound“, via DocCheck Flexikon | geschützt |
-| lung_bronchial | Bronchialatmen | 3M Littmann, „Normal tracheal sound“ (tiefpassgefiltert), via DocCheck Flexikon | geschützt |
-| lung_giemen | Giemen | 3M Littmann, „Wheezing“, via DocCheck Flexikon | geschützt |
-| lung_brummen | Brummen | 3M Littmann, „Rhonchus“, via DocCheck Flexikon | geschützt |
-| lung_knistern | Feinblasige RG / Knistern | 3M Littmann, „Fine crackles“, via DocCheck Flexikon | geschützt |
-| lung_rgfeucht | Grobblasige feuchte RG | 3M Littmann, „Coarse crackles“, via DocCheck Flexikon | geschützt |
-| lung_stridor | Stridor | 3M Littmann, „Inspiratory stridor“, via DocCheck Flexikon | geschützt |
-| lung_pleura | Pleurareiben | 3M Littmann, „Pleural friction“, via DocCheck Flexikon | geschützt |
+| lung_normal | Vesikulär, abgeschwächt (leiser) | von Felix bereitgestellt („Physiologisch_Final.mp3“) | Rechte bei der Quelle |
+| lung_giemen | Giemen | von Felix bereitgestellt („Giemen_Final.mp3“) | Rechte bei der Quelle |
+| lung_brummen | Brummen | von Felix bereitgestellt („Brummen_Final.mp3“) | Rechte bei der Quelle |
+| lung_rasseln | Rasselgeräusche | von Felix bereitgestellt („Rasselgeräusche_grob_Final.mp3“) | Rechte bei der Quelle |
+| lung_stridor_insp | Stridor inspiratorisch | Einatmung aus „Stridor_Final.mp3“, Ausatmung aus „Physiologisch_Final.mp3“ | Rechte bei der Quelle |
+| lung_stridor_exsp | Stridor exspiratorisch | Einatmung aus „Physiologisch_Final.mp3“, Ausatmung aus „Stridor_Final.mp3“ | Rechte bei der Quelle |
 | heart_normal | Normal, leise | 3M Littmann, „Normal heart sound“, via DocCheck Flexikon | geschützt |
 | heart_s3 | 3. Herzton | 3M Littmann, „Third heart sound (physiologic)“, via DocCheck Flexikon | geschützt |
 | heart_mi | Mitralinsuffizienz | 3M Littmann, „Mitral regurgitation“, via DocCheck Flexikon | geschützt |

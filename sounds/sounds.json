@@ -1,76 +1,4 @@
 {
- "lung_normal": {
-  "marks": [
-   0.0,
-   4.0,
-   7.6,
-   11.75
-  ],
-  "len": 15.15
- },
- "lung_bronchial": {
-  "marks": [
-   0.0,
-   3.9,
-   8.25
-  ],
-  "len": 12.45
- },
- "lung_giemen": {
-  "marks": [
-   0.0,
-   2.47,
-   4.73
-  ],
-  "len": 6.82
- },
- "lung_brummen": {
-  "marks": [
-   0.0,
-   2.7,
-   5.9,
-   8.9
-  ],
-  "len": 11.5
- },
- "lung_knistern": {
-  "marks": [
-   0.0,
-   2.8,
-   5.2,
-   8.2
-  ],
-  "len": 11.1
- },
- "lung_rgfeucht": {
-  "marks": [
-   0.0,
-   2.3,
-   4.3,
-   6.6,
-   8.8
-  ],
-  "len": 11.0
- },
- "lung_stridor": {
-  "marks": [
-   0.0,
-   2.6,
-   5.25,
-   7.9
-  ],
-  "len": 10.6
- },
- "lung_pleura": {
-  "marks": [
-   0.0,
-   3.15,
-   6.2,
-   9.3,
-   12.4
-  ],
-  "len": 15.45
- },
  "heart_normal": {
   "marks": [
    0.0,
@@ -197,5 +125,48 @@
    0.0
   ],
   "len": 21.24
+ },
+ "lung_normal": {
+  "marks": [
+   0.0,
+   5.0
+  ],
+  "len": 9.857
+ },
+ "lung_rasseln": {
+  "marks": [
+   0.0,
+   5.02
+  ],
+  "len": 9.705
+ },
+ "lung_giemen": {
+  "marks": [
+   0.0,
+   5.01,
+   9.98
+  ],
+  "len": 14.742
+ },
+ "lung_brummen": {
+  "marks": [
+   0.0,
+   5.02
+  ],
+  "len": 9.693
+ },
+ "lung_stridor_insp": {
+  "marks": [
+   0,
+   4.78
+  ],
+  "len": 9.6
+ },
+ "lung_stridor_exsp": {
+  "marks": [
+   0,
+   5.23
+  ],
+  "len": 9.93
  }
 }
