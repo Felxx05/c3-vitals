@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FM Vitals">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<title>FM Vitals</title>
+<style>
+:root{--bg:#000;--panel:#141414;--line:#2a2a2a;--text:#f2f2f2;--sub:#8e8e93;--key:#2c2c2e;--green:#30d158;--red:#ff453a;--blue:#64d2ff;--orange:#ff9f0a;--yellow:#ffd60a;--pink:#ff6ac1;
+ --safe-t:env(safe-area-inset-top);--safe-b:env(safe-area-inset-bottom)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:16px/1.35 -apple-system,system-ui,sans-serif;overscroll-behavior:none}
+button{font:inherit;color:inherit;cursor:pointer}
+.view{position:fixed;inset:0;display:none;flex-direction:column;padding:calc(var(--safe-t) + 8px) 16px calc(var(--safe-b) + 12px);max-width:560px;margin:0 auto;overflow-y:auto}
+.view.on{display:flex}
+.top{display:flex;align-items:center;gap:10px;min-height:44px;margin-bottom:8px}
+.top h1{font-size:20px;margin:0;flex:1}
+.back{border:0;background:var(--key);border-radius:22px;padding:8px 14px 8px 10px;font-weight:600;font-size:16px;display:flex;align-items:center;gap:4px}
+.back svg{width:18px;height:18px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.conn{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--sub)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--red);box-shadow:0 0 8px currentColor;color:var(--red);flex:none}
+.dot.ok{background:var(--green);color:var(--green)}
+.hint{color:var(--sub);font-size:14px;text-align:center;margin:10px 0 0}
+
+/* Startseite */
+.brand{font:800 30px -apple-system,system-ui;letter-spacing:-.5px;margin:6px 0 2px}
+.brand span{color:var(--blue)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+.tile{border:1px solid var(--line);background:var(--panel);border-radius:18px;aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:17px;padding:10px;text-align:center}
+.tile svg{width:54px;height:54px;stroke:var(--c);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tile small{display:block;font-weight:500;font-size:12px;color:var(--sub);margin-top:2px}
+.tile:active{transform:scale(.97)}
+.foot{margin-top:auto;padding-top:18px;text-align:center;font-size:13px;color:var(--sub)}
+.lnk{border:0;background:none;color:var(--blue);padding:0;font-size:13px}
+
+/* Koppeln */
+.codebox{margin-top:30px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.codebox input{font:700 26px ui-monospace,monospace;letter-spacing:4px;text-transform:uppercase;text-align:center;background:#000;color:var(--text);border:1px solid #333;border-radius:12px;padding:12px;width:100%;-webkit-user-select:text;user-select:text}
+.pill{border:0;border-radius:12px;background:var(--blue);color:#000;font-weight:700;font-size:17px;padding:14px}
+
+/* Gerätebühne */
+.stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-height:0}
+
+/* Blutzuckermessgerät */
+.bz{width:min(300px,78vw);background:linear-gradient(160deg,#dfe6ee,#aebccb);border-radius:42px 42px 70px 70px;padding:26px 22px 0;box-shadow:inset 0 2px 0 #fff8,inset 0 -6px 14px #0003,0 18px 40px #0009;position:relative;display:flex;flex-direction:column;align-items:center}
+.bz .brandline{font:700 12px -apple-system;color:#41546a;letter-spacing:2px;margin-bottom:10px}
+.lcd{background:#b7c4a3;border-radius:12px;box-shadow:inset 0 3px 8px #0006;width:100%;height:128px;position:relative;color:#1a2416;font-family:ui-monospace,Menlo,monospace;overflow:hidden;transition:background .2s}
+.lcd.off{background:#55604c}
+.lcd.off *{visibility:hidden}
+.lcd .big{position:absolute;right:16px;top:20px;font:700 64px/1 "Helvetica Neue",ui-monospace,monospace;letter-spacing:-2px}
+.lcd .unit{position:absolute;right:16px;bottom:12px;font:700 15px -apple-system}
+.lcd .tl{position:absolute;left:12px;top:10px;font:700 14px -apple-system}
+.lcd .bl{position:absolute;left:12px;bottom:12px;font:700 14px -apple-system}
+.lcd svg{stroke:#1a2416;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.blink{animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.bz .keys{display:flex;gap:22px;margin:22px 0 18px;align-items:center}
+.key{border:0;border-radius:50%;width:62px;height:62px;background:radial-gradient(circle at 35% 30%,#fafcff,#9aa8b8);box-shadow:0 4px 0 #6b7a8b,0 6px 10px #0005;font:800 18px -apple-system;color:#2c3a4b;display:flex;align-items:center;justify-content:center}
+.key:active{transform:translateY(3px);box-shadow:0 1px 0 #6b7a8b,0 2px 4px #0005}
+.key svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2.6;stroke-linecap:round}
+.key.pwr{color:#c0392b}
+.keylbl{font:600 11px -apple-system;color:#41546a;text-align:center;margin-top:6px}
+.bz .slot{width:120px;height:22px;background:#3d4a59;border-radius:6px 6px 0 0;margin-top:auto;position:relative}
+.strip{position:relative;width:64px;height:120px;margin-top:-4px;background:linear-gradient(#f4f4f0,#e0e0d8);border-radius:4px 4px 10px 10px;box-shadow:0 6px 14px #0007;border:0;display:flex;align-items:flex-end;justify-content:center;padding:0 0 10px}
+.strip::before{content:"";position:absolute;left:24px;right:24px;top:6px;bottom:38px;background:repeating-linear-gradient(#c9a227 0 3px,transparent 3px 8px);opacity:.7}
+.strip .drop{width:30px;height:30px;border-radius:50%;background:#d6d6cf;box-shadow:inset 0 2px 4px #0003;position:relative}
+.strip.blood .drop{background:radial-gradient(circle at 35% 35%,#ff5a5a,#8b0000)}
+.strip.ready .drop{animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 8px #ff453a55,inset 0 2px 4px #0003}}
+
+/* Ohrthermometer */
+.th{position:relative;width:min(230px,62vw);height:min(470px,62vh);margin:0 auto}
+.th .probe{position:absolute;left:50%;top:0;transform:translateX(-50%);width:44%;height:16%;background:linear-gradient(90deg,#d9dde3,#fff 45%,#cfd4db);border-radius:50% 50% 12% 12%/70% 70% 12% 12%;box-shadow:0 4px 10px #0004}
+.th .probe::after{content:"";position:absolute;left:30%;right:30%;top:8%;height:22%;border-radius:50%;background:radial-gradient(circle,#6d7f97,#2f3b4c)}
+.th .ring{position:absolute;left:50%;top:15%;transform:translateX(-50%);width:56%;height:5%;background:#1f6fd6;border-radius:8px}
+.th .body{position:absolute;left:0;right:0;top:19%;bottom:0;background:linear-gradient(90deg,#d5dae1,#fff 40%,#eef1f4 70%,#c2c8d0);border-radius:44% 44% 40% 40%/20% 20% 16% 16%;box-shadow:0 18px 40px #0009,inset 0 -8px 16px #0002;display:flex;flex-direction:column;align-items:center;padding-top:12%}
+.th .lcd{width:72%;height:auto;aspect-ratio:1.25/1;border-radius:14px;background:#cfe7d2}
+.th .lcd.g{background:#9be7a8}.th .lcd.y{background:#ffe27a}.th .lcd.r{background:#ff9a8a}
+.th .lcd .big{font-size:clamp(34px,11vw,48px);top:auto;bottom:24%;right:10px}
+.th .lcd .unit{bottom:8%;right:12px}
+.th .keys{display:flex;gap:14px;margin-top:12%}
+.th .key{width:48px;height:48px;background:radial-gradient(circle at 35% 30%,#fff,#c9cfd7);box-shadow:0 3px 0 #9aa3ae,0 5px 8px #0004;font-size:13px;color:#1f3b63}
+.th .start{margin-top:9%;width:58%;height:15%;border:0;border-radius:22px;background:linear-gradient(#2f80ed,#1559b8);color:#fff;font:800 15px -apple-system;letter-spacing:.5px;box-shadow:0 5px 0 #0d3c80,0 8px 14px #0005}
+.th .start:active{transform:translateY(4px);box-shadow:0 1px 0 #0d3c80}
+.th .logo{margin-top:auto;margin-bottom:12%;font:800 15px -apple-system;color:#1559b8;letter-spacing:1px}
+
+/* Auskultation */
+.seg{display:flex;background:var(--key);border-radius:12px;padding:3px;gap:3px;width:100%}
+.seg button{flex:1;border:0;background:transparent;border-radius:9px;padding:9px 4px;font-weight:700;font-size:15px;color:var(--sub)}
+.seg button.on{background:#48484a;color:var(--text)}
+.seg.small{width:auto;align-self:center}
+.seg.small button{padding:6px 14px;font-size:13px}
+.bodybox{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
+#body{height:100%;max-height:62vh;width:auto;max-width:100%}
+#body .skin{fill:#2a2f36;stroke:#4a525c;stroke-width:2}
+#body .lm{stroke:#4a525c;stroke-width:1.6;fill:none;stroke-linecap:round}
+.pt{cursor:pointer}
+.pt circle.o{fill:#64d2ff33;stroke:var(--blue);stroke-width:2.5}
+.pt circle.i{fill:var(--blue)}
+.pt.on circle.o{fill:#30d15855;stroke:var(--green);animation:ring 1.2s ease-out infinite}
+.pt.on circle.i{fill:var(--green)}
+@keyframes ring{0%{stroke-width:2.5}50%{stroke-width:7}100%{stroke-width:2.5}}
+.nowplay{min-height:52px;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:600;text-align:center}
+.nowplay button{border:0;background:var(--key);border-radius:10px;padding:8px 14px;font-weight:700}
+
+/* Melder */
+.pager{width:min(300px,80vw);background:linear-gradient(160deg,#3a3d42,#17181b);border-radius:28px;padding:22px 18px 26px;box-shadow:inset 0 2px 0 #fff2,0 18px 40px #000c;display:flex;flex-direction:column;align-items:center;gap:16px;position:relative}
+.pager .led{position:absolute;top:12px;right:22px;width:12px;height:12px;border-radius:50%;background:#401010;box-shadow:inset 0 1px 2px #000}
+.pager.alarm .led{animation:led .5s steps(1) infinite}
+@keyframes led{0%{background:#ff2a2a;box-shadow:0 0 14px #ff2a2a}50%{background:#401010;box-shadow:none}}
+.pager .name{font:800 13px -apple-system;letter-spacing:3px;color:#9aa0a8}
+.pdisp{width:100%;height:190px;background:#1d2a20;border-radius:10px;box-shadow:inset 0 3px 8px #000a;padding:10px 12px;font-family:ui-monospace,Menlo,monospace;color:#cfe8c8;display:flex;flex-direction:column;overflow:hidden;transition:background .15s}
+.pdisp.lit{background:#ffb54a;color:#2a1600}
+.pager.alarm .pdisp{animation:lit .5s steps(1) infinite}
+@keyframes lit{0%{background:#ffb54a;color:#2a1600}50%{background:#1d2a20;color:#cfe8c8}}
+.pdisp .st{display:flex;justify-content:space-between;font-size:12px;opacity:.85}
+.pdisp .st svg{width:22px;height:12px;stroke:currentColor;fill:none;stroke-width:1.6}
+.pdisp .ric{font:700 19px/1.2 ui-monospace,Menlo,monospace;text-align:center;margin:auto 0 4px}
+.pdisp .clk{font:700 30px/1 ui-monospace,Menlo,monospace;text-align:center;margin-bottom:auto}
+.pdisp .msg{font:600 15px/1.3 ui-monospace,Menlo,monospace;white-space:pre-wrap;overflow-y:auto;flex:1;margin-top:6px;-webkit-user-select:text;user-select:text}
+.pdisp .hdr{font:800 14px ui-monospace,Menlo,monospace;display:flex;justify-content:space-between;border-bottom:1px solid currentColor;padding-bottom:3px}
+.bigbtn{width:116px;height:116px;border-radius:50%;border:0;background:radial-gradient(circle at 40% 35%,#5a5f66,#26282c);box-shadow:0 6px 0 #0b0c0d,0 10px 18px #000b,inset 0 2px 0 #fff2;display:flex;align-items:center;justify-content:center}
+.bigbtn:active{transform:translateY(5px);box-shadow:0 1px 0 #0b0c0d,inset 0 2px 0 #fff2}
+.bigbtn span{width:44px;height:44px;border-radius:50%;border:3px solid #8a9099}
+.pkeys{display:flex;gap:16px;align-items:center}
+.skey{border:0;border-radius:14px;background:linear-gradient(#45494f,#2a2c30);box-shadow:0 4px 0 #0b0c0d;color:#cfd3d8;font:700 13px -apple-system;padding:10px 14px}
+.skey:active{transform:translateY(3px);box-shadow:0 1px 0 #0b0c0d}
+
+/* Hochformat */
+#rotate{position:fixed;inset:0;background:#000;display:none;align-items:center;justify-content:center;text-align:center;z-index:99;padding:20px;color:var(--sub)}
+@media (orientation:landscape) and (max-height:520px){#rotate{display:flex}}
+#toast{position:fixed;left:50%;bottom:calc(var(--safe-b) + 24px);transform:translate(-50%,20px);width:max-content;max-width:calc(100% - 32px);background:#2c2c2e;border:1px solid #444;border-radius:12px;padding:12px 16px;text-align:center;opacity:0;pointer-events:none;transition:.2s;z-index:60}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+
+<div id="rotate"><div><b style="color:var(--text);font-size:18px">FM Vitals</b><br>Bitte das Gerät hochkant halten.</div></div>
+<div id="toast" role="status"></div>
+
+<!-- Koppeln -->
+<section class="view" id="vCode">
+  <div class="brand">FM <span>Vitals</span></div>
+  <div class="codebox">
+    <b>Mit Monitor koppeln</b>
+    <input id="codeInput" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE">
+    <button class="pill" id="codeBtn">Koppeln</button>
+    <div class="hint" style="margin:0">Am Monitor auf „Geräte koppeln“ tippen, „FM Vitals“ wählen und den QR-Code scannen. Oder den 8-stelligen Code abtippen.</div>
+  </div>
+</section>
+
+<!-- Startseite -->
+<section class="view" id="vHome">
+  <div class="brand">FM <span>Vitals</span></div>
+  <div class="conn"><span class="dot" id="dot"></span><span id="connText">Verbinde …</span></div>
+  <div class="tiles">
+    <button class="tile" data-go="vBz" style="--c:var(--red)"><svg viewBox="0 0 48 48"><rect x="12" y="4" width="24" height="34" rx="8"/><rect x="17" y="10" width="14" height="10" rx="2"/><path d="M21 38v6h6v-6"/><path d="M24 25c-2 3-3 4-3 5.5a3 3 0 0 0 6 0c0-1.5-1-2.5-3-5.5z"/></svg>Blutzucker<small>mmol/l</small></button>
+    <button class="tile" data-go="vTh" style="--c:var(--blue)"><svg viewBox="0 0 48 48"><path d="M20 4h8l2 8H18z"/><path d="M17 12h14c3 8 3 22 0 32H17c-3-10-3-24 0-32z"/><rect x="20" y="17" width="8" height="7" rx="1.5"/><circle cx="24" cy="33" r="3"/></svg>Thermometer<small>Ohr</small></button>
+    <button class="tile" data-go="vAu" style="--c:var(--green)"><svg viewBox="0 0 48 48"><path d="M12 4v12a8 8 0 0 0 16 0V4"/><path d="M20 24v8a9 9 0 0 0 18 0v-4"/><circle cx="38" cy="24" r="4"/></svg>Auskultation<small>Lunge · Herz · Bauch</small></button>
+    <button class="tile" data-go="vPg" style="--c:var(--orange)"><svg viewBox="0 0 48 48"><rect x="10" y="6" width="28" height="38" rx="6"/><rect x="15" y="11" width="18" height="12" rx="2"/><circle cx="24" cy="33" r="5"/><circle cx="34" cy="10" r="1.5"/></svg>Melder<small>Joh. WSF 303/83-01</small></button>
+  </div>
+  <div class="foot"><span id="codeInfo"></span><br><button class="lnk" id="codeReset">Anderen Monitor koppeln</button></div>
+</section>
+
+<!-- Blutzucker -->
+<section class="view" id="vBz">
+  <div class="top"><button class="back" data-go="vHome"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Zurück</button><h1>Blutzucker</h1></div>
+  <div class="stage">
+    <div class="bz">
+      <div class="brandline">GLUCO&nbsp;FM</div>
+      <div class="lcd off" id="bzLcd">
+        <div class="tl" id="bzTl"></div>
+        <div class="big" id="bzBig"></div>
+        <div class="unit" id="bzUnit"></div>
+        <div class="bl" id="bzBl"></div>
+      </div>
+      <div class="keys">
+        <div><button class="key pwr" id="bzPwr" aria-label="Ein/Aus"><svg viewBox="0 0 24 24"><path d="M12 3v8M6.3 7a8 8 0 1 0 11.4 0"/></svg></button><div class="keylbl">EIN/AUS</div></div>
+        <div><button class="key" id="bzMem">M</button><div class="keylbl">SPEICHER</div></div>
+      </div>
+      <div class="slot"></div>
+    </div>
+    <button class="strip" id="bzStrip" aria-label="Blut auf den Teststreifen geben"><span class="drop"></span></button>
+    <div class="hint" id="bzHint">Gerät einschalten</div>
+  </div>
+</section>
+
+<!-- Thermometer -->
+<section class="view" id="vTh">
+  <div class="top"><button class="back" data-go="vHome"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Zurück</button><h1>Ohrthermometer</h1></div>
+  <div class="stage">
+    <div class="th">
+      <div class="probe"></div><div class="ring"></div>
+      <div class="body">
+        <div class="lcd off" id="thLcd">
+          <div class="tl" id="thTl"></div>
+          <div class="big" id="thBig"></div>
+          <div class="unit" id="thUnit"></div>
+        </div>
+        <div class="keys">
+          <button class="key" id="thPwr" aria-label="Ein/Aus"><svg viewBox="0 0 24 24"><path d="M12 3v8M6.3 7a8 8 0 1 0 11.4 0"/></svg></button>
+          <button class="key" id="thMem">MEM</button>
+        </div>
+        <button class="start" id="thStart">START</button>
+        <div class="logo">THERMO FM</div>
+      </div>
+    </div>
+    <div class="hint" id="thHint">Gerät einschalten</div>
+  </div>
+</section>
+
+<!-- Auskultation -->
+<section class="view" id="vAu">
+  <div class="top"><button class="back" data-go="vHome"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Zurück</button><h1>Auskultation</h1></div>
+  <div class="seg" id="auSeg"><button data-reg="lung" class="on">Lunge</button><button data-reg="heart">Herz</button><button data-reg="bowel">Bauch</button></div>
+  <div class="seg small" id="auSide" style="margin-top:8px"><button data-side="front" class="on">Vorne</button><button data-side="back">Rücken</button></div>
+  <div class="bodybox"><svg id="body" viewBox="0 0 300 430"></svg></div>
+  <div class="nowplay" id="nowPlay">Tippe auf einen Abhörpunkt</div>
+  <div class="hint" style="margin-top:0">Mit Kopfhörern klingt es am echtesten.</div>
+</section>
+
+<!-- Melder -->
+<section class="view" id="vPg">
+  <div class="top"><button class="back" data-go="vHome"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Zurück</button><h1>Melder</h1></div>
+  <div class="stage">
+    <div class="pager" id="pager">
+      <div class="led"></div>
+      <div class="name">B O S S</div>
+      <div class="pdisp" id="pDisp"></div>
+      <button class="bigbtn" id="pBig" aria-label="Quittieren"><span></span></button>
+      <div class="pkeys"><button class="skey" id="pInfo">Meldungen</button><button class="skey" id="pLight">Licht</button></div>
+    </div>
+    <div class="hint" id="pHint">Großer Knopf: Alarm quittieren · „Meldungen“: letzte Einsätze ansehen</div>
+  </div>
+</section>
+
+<script>if(location.protocol==="https:"||location.protocol==="http:")document.write('<script src="mqtt.min.js"><\/script>')</script>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const RIC="Joh. WSF 303/83-01";
+const BROKERS=["wss://mqtt.eclipseprojects.io:443/mqtt","wss://broker.emqx.io:8084/mqtt","wss://broker.hivemq.com:8884/mqtt","wss://test.mosquitto.org:8081/mqtt"];
+const DEF={bloodGlucose:5.8,temperature:36.8,heartRate:75,respRate:14,rhythm:"sinus",hasPulse:true,arrhythmic:false,lungSound:"normal",lungSide:"beidseits",heartSound:"normal",abdomenSound:"normal",pagerText:"",pagerAlarmID:0,pagerAlarmAt:0};
+let S={...DEF};
+function store(k,v){try{v===null?localStorage.removeItem(k):localStorage.setItem(k,typeof v==="string"?v:JSON.stringify(v))}catch(e){}}
+function stored(k,def){try{const v=localStorage.getItem(k);if(v===null)return def;try{return JSON.parse(v)}catch(e){return v}}catch(e){return def}}
+let toastTimer;function toast(t){const el=$("toast");el.textContent=t;el.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("show"),3000)}
+
+// ---------- Ansichten ----------
+let view="";
+function go(id){
+  if(view==="vAu"&&id!=="vAu")stopVoice();
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on",v.id===id));
+  view=id;
+  if(id==="vPg")renderPager();
+}
+
+// ---------- Audio ----------
+let ctx=null,master=null,noiseBuf=null;
+function audio(){
+  if(ctx)return ctx;
+  try{if(navigator.audioSession)navigator.audioSession.type="playback"}catch(e){}
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;
+  ctx=new AC();
+  const comp=ctx.createDynamicsCompressor();comp.threshold.value=-12;comp.ratio.value=4;comp.connect(ctx.destination);
+  master=ctx.createGain();master.gain.value=0.9;master.connect(comp);
+  noiseBuf=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);
+  const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+  return ctx;
+}
+// iOS gibt Ton erst nach einer Berührung frei
+function unlock(){const c=audio();if(!c)return;if(c.state==="suspended")c.resume();const s=c.createBufferSource();s.buffer=c.createBuffer(1,1,22050);s.connect(c.destination);s.start(0)}
+["pointerdown","touchend","click"].forEach(n=>document.addEventListener(n,unlock,{passive:true}));
+const rnd=(a,b)=>a+Math.random()*(b-a);
+function noise(t,dur,out,{type="bandpass",f=400,q=1,gain=0.3,attack=0.01,release=0.05,shape=null}={}){
+  const src=ctx.createBufferSource();src.buffer=noiseBuf;src.loop=true;
+  const flt=ctx.createBiquadFilter();flt.type=type;flt.frequency.value=f;flt.Q.value=q;
+  const g=ctx.createGain();g.gain.value=0;
+  src.connect(flt);flt.connect(g);g.connect(out);
+  if(shape)shape(g.gain,t,dur,gain,flt);
+  else{g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(gain,t+attack);g.gain.setValueAtTime(gain,t+Math.max(attack,dur-release));g.gain.linearRampToValueAtTime(0,t+dur)}
+  src.start(t,Math.random()*1.5);src.stop(t+dur+0.05);
+  return flt;
+}
+function tone(t,dur,out,{f=440,type="sine",gain=0.2,attack=0.005,decay=null,f2=null}={}){
+  const o=ctx.createOscillator();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+dur);
+  const g=ctx.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(gain,t+attack);
+  if(decay)g.gain.setTargetAtTime(0,t+attack,decay);else{g.gain.setValueAtTime(gain,t+Math.max(attack,dur-0.03));g.gain.linearRampToValueAtTime(0,t+dur)}
+  o.connect(g);g.connect(out);o.start(t);o.stop(t+dur+(decay?decay*6:0.05));
+}
+function beep(f=2600,dur=0.08,gain=0.25,t){const c=audio();if(!c)return;tone(t??c.currentTime,dur,master,{f,type:"square",gain:gain*0.5})}
+
+// ---------- Blutzucker ----------
+const bz={on:false,phase:"off",mem:stored("vitBzMem",[]),memIdx:-1,timer:null,value:null};
+function bzRender(){
+  $("bzLcd").classList.toggle("off",!bz.on);
+  const strip=$("bzStrip");strip.classList.toggle("ready",bz.phase==="ready");strip.classList.toggle("blood",bz.phase==="count"||bz.phase==="result");
+  let tl="",big="",unit="",bl="",hint="";
+  if(!bz.on)hint="Gerät einschalten";
+  else if(bz.phase==="test"){big="8.8.8";tl="M  ▲";unit="mmol/L";hint="Selbsttest …"}
+  else if(bz.phase==="ready"){big='<svg width="60" height="54" viewBox="0 0 30 27" class="blink"><path d="M15 2c-5 7-8 10-8 15a8 8 0 0 0 16 0c0-5-3-8-8-15z"/></svg>';bl="Blut auftragen";hint="Tippe auf den Teststreifen, um Blut aufzutragen"}
+  else if(bz.phase==="count"){big=String(bz.count);bl="Messung …";hint="Messung läuft"}
+  else if(bz.phase==="result"){big=fmtBz(bz.value);unit="mmol/L";tl=new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});hint="Neue Messung: Streifen erneut antippen"}
+  else if(bz.phase==="mem"){const m=bz.mem[bz.memIdx];if(m){big=fmtBz(m.v);unit="mmol/L";tl="M"+(bz.memIdx+1)+"  "+m.t}else{big="---";tl="M"}hint="M: nächster Wert"}
+  $("bzTl").textContent=tl;$("bzBig").innerHTML=big;$("bzUnit").textContent=unit;$("bzBl").textContent=bl;$("bzHint").textContent=hint;
+}
+function fmtBz(v){return v>33.3?"HI":v<0.6?"LO":v.toFixed(1).replace(".",",")}
+function bzPower(){
+  clearTimeout(bz.timer);clearInterval(bz.timer);
+  bz.on=!bz.on;beep(2600,0.06);
+  if(bz.on){bz.phase="test";bzRender();bz.timer=setTimeout(()=>{bz.phase="ready";bzRender()},1200)}else{bz.phase="off";bzRender()}
+}
+function bzStrip(){
+  if(!bz.on){toast("Erst das Gerät einschalten");return}
+  if(bz.phase==="test"||bz.phase==="count")return;
+  bz.phase="count";bz.count=5;beep(2600,0.05);bzRender();
+  bz.timer=setInterval(()=>{bz.count--;if(bz.count>0){bzRender();return}
+    clearInterval(bz.timer);bz.value=+S.bloodGlucose||DEF.bloodGlucose;bz.phase="result";beep(2600,0.08);setTimeout(()=>beep(2600,0.08),160);
+    bz.mem.unshift({v:bz.value,t:new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})});bz.mem=bz.mem.slice(0,3);store("vitBzMem",bz.mem);bzRender()},1000);
+}
+function bzMemory(){
+  if(!bz.on){toast("Erst das Gerät einschalten");return}
+  if(bz.phase==="count"||bz.phase==="test")return;
+  clearInterval(bz.timer);beep(2600,0.04);
+  if(bz.phase!=="mem"){bz.phase="mem";bz.memIdx=0}
+  else{bz.memIdx++;if(bz.memIdx>=Math.max(1,Math.min(3,bz.mem.length))){bz.phase="ready";bz.memIdx=-1}}
+  bzRender();
+}
+
+// ---------- Thermometer ----------
+const th={on:false,phase:"off",mem:stored("vitThMem",[]),memIdx:-1,timer:null,value:null};
+function thColor(v){return v>=38?"r":v>=37.5?"y":"g"}
+function thRender(){
+  const l=$("thLcd");l.classList.toggle("off",!th.on);l.classList.remove("g","y","r");
+  let tl="",big="",unit="",hint="";
+  if(!th.on)hint="Gerät einschalten";
+  else if(th.phase==="ready"){big="--.-";unit="°C";tl="◖ Ohr";hint="Sonde ins Ohr – dann START drücken"}
+  else if(th.phase==="measure"){big='<span class="blink">- - -</span>';unit="°C";tl="◖ Ohr";hint="Messung läuft …"}
+  else if(th.phase==="result"){big=th.value.toFixed(1).replace(".",",");unit="°C";tl="◖ Ohr";l.classList.add(thColor(th.value));hint="START für neue Messung"}
+  else if(th.phase==="mem"){const m=th.mem[th.memIdx];if(m){big=m.v.toFixed(1).replace(".",",");unit="°C";tl="MEM "+(th.memIdx+1)+"  "+m.t;l.classList.add(thColor(m.v))}else{big="---";tl="MEM"}hint="MEM: nächster Wert"}
+  $("thTl").textContent=tl;$("thBig").innerHTML=big;$("thUnit").textContent=unit;$("thHint").textContent=hint;
+}
+function thPower(){clearTimeout(th.timer);th.on=!th.on;th.phase=th.on?"ready":"off";beep(3000,0.05);thRender()}
+function thStart(){
+  if(!th.on){toast("Erst das Thermometer einschalten");return}
+  if(th.phase==="measure")return;
+  th.phase="measure";beep(3000,0.04);thRender();
+  th.timer=setTimeout(()=>{th.value=Math.round((+S.temperature||DEF.temperature)*10)/10;th.phase="result";
+    beep(3000,0.12);if(th.value>=38){setTimeout(()=>beep(3000,0.12),220);setTimeout(()=>beep(3000,0.12),440)}
+    th.mem.unshift({v:th.value,t:new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})});th.mem=th.mem.slice(0,3);store("vitThMem",th.mem);thRender()},rnd(1100,1800));
+}
+function thMemory(){
+  if(!th.on){toast("Erst das Thermometer einschalten");return}
+  if(th.phase==="measure")return;beep(3000,0.04);
+  if(th.phase!=="mem"){th.phase="mem";th.memIdx=0}else{th.memIdx++;if(th.memIdx>=Math.max(1,Math.min(3,th.mem.length))){th.phase="ready";th.memIdx=-1}}
+  thRender();
+}
+
+// ---------- Auskultation ----------
+// Punkte: x/y im Körperbild, Seite aus Sicht des Patienten (r/l), Zone bzw. Name
+const POINTS={
+ lung_front:[{id:"rA",x:112,y:128,s:"r",z:"apex",n:"Lungenspitze rechts"},{id:"lA",x:188,y:128,s:"l",z:"apex",n:"Lungenspitze links"},
+  {id:"rM",x:104,y:178,s:"r",z:"mid",n:"Oberfeld rechts"},{id:"lM",x:196,y:178,s:"l",z:"mid",n:"Oberfeld links"},
+  {id:"rB",x:100,y:228,s:"r",z:"base",n:"Unterfeld rechts"},{id:"lB",x:200,y:228,s:"l",z:"base",n:"Unterfeld links"},
+  {id:"rL",x:76,y:212,s:"r",z:"base",n:"Seitlich rechts"},{id:"lL",x:224,y:212,s:"l",z:"base",n:"Seitlich links"}],
+ lung_back:[{id:"lA",x:118,y:130,s:"l",z:"apex",n:"Oben links"},{id:"rA",x:182,y:130,s:"r",z:"apex",n:"Oben rechts"},
+  {id:"lM",x:112,y:180,s:"l",z:"mid",n:"Mitte links"},{id:"rM",x:188,y:180,s:"r",z:"mid",n:"Mitte rechts"},
+  {id:"lB",x:110,y:232,s:"l",z:"base",n:"Basal links"},{id:"rB",x:190,y:232,s:"r",z:"base",n:"Basal rechts"},
+  {id:"lU",x:116,y:272,s:"l",z:"base",n:"Lungengrenze links"},{id:"rU",x:184,y:272,s:"r",z:"base",n:"Lungengrenze rechts"}],
+ heart:[{id:"ao",x:136,y:138,n:"Aortenklappe (2. ICR rechts)"},{id:"pu",x:164,y:138,n:"Pulmonalklappe (2. ICR links)"},
+  {id:"erb",x:164,y:162,n:"Erb-Punkt (3. ICR links)"},{id:"tr",x:160,y:188,n:"Trikuspidalklappe (4. ICR links)"},{id:"mi",x:194,y:208,n:"Mitralklappe (5. ICR, Herzspitze)"}],
+ bowel:[{id:"ruq",x:124,y:282,n:"Rechter Oberbauch"},{id:"luq",x:176,y:282,n:"Linker Oberbauch"},{id:"rlq",x:124,y:340,n:"Rechter Unterbauch"},{id:"llq",x:176,y:340,n:"Linker Unterbauch"},{id:"umb",x:150,y:311,n:"Nabel"}]
+};
+let region="lung",side="front",activePt=null,voice=null;
+function bodySVG(){
+  const back=region==="lung"&&side==="back";
+  let s=`<path class="skin" d="M150 14c-20 0-34 15-34 35 0 13 6 24 16 30v12c-24 4-46 10-60 20-12 9-16 26-18 46l-6 70c-1 14 1 22 6 26l8-2 6-84 6 34c2 22 0 46-4 74-3 22 2 40 12 52 22 18 48 26 68 26s46-8 68-26c10-12 15-30 12-52-4-28-6-52-4-74l6-34 6 84 8 2c5-4 7-12 6-26l-6-70c-2-20-6-37-18-46-14-10-36-16-60-20V79c10-6 16-17 16-30 0-20-14-35-34-35z"/>`;
+  if(back){s+=`<path class="lm" d="M150 96v250M108 118c10 20 12 50 8 74M192 118c-10 20-12 50-8 74M118 300c20 8 44 8 64 0"/>`}
+  else{s+=`<path class="lm" d="M150 104v92M104 104c16 6 30 6 46 0c16 6 30 6 46 0M112 214c24 10 52 10 76 0"/><circle cx="150" cy="318" r="3.5" class="lm"/>`;
+    s+=`<path class="lm" d="M118 228c-6 30-6 60 0 92M182 228c6 30 6 60 0 92" opacity=".45"/>`}
+  s+=`<text x="150" y="420" text-anchor="middle" fill="#8e8e93" font-size="13" font-family="-apple-system,system-ui">${back?"Rücken (Ansicht von hinten)":"Vorderseite"}</text>`;
+  if(!back)s+=`<text x="40" y="420" fill="#555" font-size="12" font-family="-apple-system">R</text><text x="252" y="420" fill="#555" font-size="12" font-family="-apple-system">L</text>`;
+  else s+=`<text x="40" y="420" fill="#555" font-size="12" font-family="-apple-system">L</text><text x="252" y="420" fill="#555" font-size="12" font-family="-apple-system">R</text>`;
+  const pts=region==="lung"?POINTS["lung_"+side]:POINTS[region];
+  s+=pts.map(p=>`<g class="pt${activePt&&activePt.id===p.id&&activePt.reg===region?" on":""}" data-pt="${p.id}"><circle class="o" cx="${p.x}" cy="${p.y}" r="15"/><circle class="i" cx="${p.x}" cy="${p.y}" r="5"/><circle cx="${p.x}" cy="${p.y}" r="24" fill="transparent"/></g>`).join("");
+  $("body").innerHTML=s;
+  $("auSide").style.visibility=region==="lung"?"visible":"hidden";
+  document.querySelectorAll("#auSeg button").forEach(b=>b.classList.toggle("on",b.dataset.reg===region));
+  document.querySelectorAll("#auSide button").forEach(b=>b.classList.toggle("on",b.dataset.side===side));
+}
+function renderNow(){
+  $("nowPlay").innerHTML=activePt?`<span>🎧 ${activePt.n}</span><button id="stopBtn">Stopp</button>`:"Tippe auf einen Abhörpunkt";
+}
+function stopVoice(){
+  if(voice){const v=voice;voice=null;v.alive=false;try{v.out.gain.setTargetAtTime(0,ctx.currentTime,0.05);setTimeout(()=>v.out.disconnect(),400)}catch(e){}}
+  activePt=null;renderNow();if(view==="vAu")bodySVG();
+}
+function startVoice(reg,p){
+  const c=audio();if(!c){toast("Ton wird von diesem Browser nicht unterstützt");return}
+  if(c.state==="suspended")c.resume();
+  if(voice){voice.alive=false;const o=voice.out;o.gain.setTargetAtTime(0,c.currentTime,0.04);setTimeout(()=>o.disconnect(),400)}
+  activePt={...p,reg};
+  // Stethoskop: tiefe Frequenzen betont, Höhen gedämpft
+  const out=c.createGain();out.gain.value=0;out.gain.setTargetAtTime(1,c.currentTime,0.08);
+  const lp=c.createBiquadFilter();lp.type="lowpass";lp.frequency.value=reg==="bowel"?2600:1600;out.connect(lp);lp.connect(master);
+  const v={alive:true,out,reg,p,next:c.currentTime+0.15};voice=v;
+  // leises Grundrauschen der Membran
+  const bg=c.createBufferSource();bg.buffer=noiseBuf;bg.loop=true;const bf=c.createBiquadFilter();bf.type="lowpass";bf.frequency.value=220;const bgG=c.createGain();bgG.gain.value=0.025;
+  bg.connect(bf);bf.connect(bgG);bgG.connect(out);bg.start();v.bg=bg;
+  renderNow();bodySVG();
+}
+// Planung: alle 60 ms die nächsten Ereignisse (bis 0,6 s voraus) einplanen
+setInterval(()=>{
+  if(!voice||!voice.alive||!ctx)return;
+  const v=voice;
+  while(v.next<ctx.currentTime+0.6){
+    const dur=v.reg==="lung"?lungCycle(v,v.next):v.reg==="heart"?heartCycle(v,v.next):bowelEvent(v,v.next);
+    v.next+=Math.max(0.15,dur);
+  }
+  if(!v.alive&&v.bg)v.bg.stop();
+},60);
+setInterval(()=>{if(voice&&!voice.alive&&voice.bg){try{voice.bg.stop()}catch(e){}}},1000);
+
+function lungFinding(p){
+  const sd=S.lungSide||"beidseits";
+  if(sd==="links"&&p.s!=="l")return "normal";
+  if(sd==="rechts"&&p.s!=="r")return "normal";
+  return S.lungSound||"normal";
+}
+function lungCycle(v,t){
+  const p=v.p,f=lungFinding(p),out=v.out;
+  const rr=Math.min(40,Math.max(6,+S.respRate||14)),cyc=60/rr;
+  const obstr=f==="giemen"||f==="brummen";
+  const ti=cyc*(obstr?0.3:0.38),te=cyc-ti;
+  const zone=p.z==="apex"?0.7:p.z==="mid"?0.9:1;
+  let vol=f==="abgeschwaecht"?0.3:f==="aufgehoben"?0.03:1;
+  vol*=zone;
+  const shape=(peakAt,fall)=>(g,t0,d,gain)=>{g.setValueAtTime(0,t0);g.linearRampToValueAtTime(gain,t0+d*peakAt);g.setValueAtTime(gain,t0+d*fall);g.linearRampToValueAtTime(0,t0+d)};
+  if(f==="bronchial"){
+    noise(t,ti,out,{f:900,q:0.9,gain:0.32*zone,shape:shape(0.2,0.85)});
+    noise(t+ti+0.12,te*0.8,out,{f:950,q:0.9,gain:0.34*zone,shape:shape(0.15,0.8)});
+  }else{
+    // vesikulär: Einatmung deutlich, Ausatmung leise und kurz
+    noise(t,ti,out,{f:320,q:0.7,gain:0.42*vol,shape:shape(0.55,0.85)});
+    noise(t+ti,te*0.35,out,{f:260,q:0.7,gain:0.12*vol,shape:shape(0.1,0.3)});
+  }
+  if(f==="giemen"){
+    // pfeifend, v. a. in der verlängerten Ausatmung
+    const n=2+Math.floor(Math.random()*2);
+    for(let i=0;i<n;i++){const fr=rnd(380,720);tone(t+ti*0.85,te*0.85,out,{f:fr,f2:fr*rnd(0.85,1.08),type:i?"triangle":"sine",gain:0.06*zone,attack:0.15})}
+    tone(t+ti*0.5,ti*0.5,out,{f:rnd(450,600),type:"sine",gain:0.025*zone,attack:0.1});
+  }
+  if(f==="brummen"){
+    const fr=rnd(110,170);
+    [t+ti*0.3,t+ti].forEach((s,i)=>{const d=i?te*0.8:ti*0.7;const o=ctx.createOscillator();o.type="sawtooth";o.frequency.value=fr*(i?0.9:1);
+      const fl=ctx.createBiquadFilter();fl.type="lowpass";fl.frequency.value=380;const g=ctx.createGain();g.gain.setValueAtTime(0,s);g.gain.linearRampToValueAtTime(0.09*zone,s+0.2);g.gain.setValueAtTime(0.09*zone,s+d-0.2);g.gain.linearRampToValueAtTime(0,s+d);
+      const lfo=ctx.createOscillator();lfo.frequency.value=rnd(6,10);const lg=ctx.createGain();lg.gain.value=0.035*zone;lfo.connect(lg);lg.connect(g.gain);
+      o.connect(fl);fl.connect(g);g.connect(out);o.start(s);o.stop(s+d+0.05);lfo.start(s);lfo.stop(s+d+0.05)});
+  }
+  if(f==="rgfeucht"||f==="knistern"){
+    const fine=f==="knistern";const w=p.z==="base"?1:p.z==="mid"?0.6:0.25;
+    const n=Math.round((fine?34:22)*w);
+    for(let i=0;i<n;i++){const s=t+ti*rnd(fine?0.5:0.25,0.98);const d=fine?rnd(0.003,0.007):rnd(0.008,0.02);
+      noise(s,d,out,{type:fine?"highpass":"bandpass",f:fine?900:rnd(350,800),q:1.2,gain:fine?rnd(0.18,0.32):rnd(0.25,0.5),attack:0.001,release:d*0.6})}
+    if(!fine)for(let i=0;i<Math.round(6*w);i++){const s=t+ti+te*rnd(0,0.4);noise(s,0.012,out,{f:rnd(300,600),q:1.2,gain:0.25,attack:0.001,release:0.008})}
+  }
+  if(f==="stridor"){
+    noise(t+ti*0.1,ti*0.85,out,{f:1100,q:6,gain:0.22,shape:shape(0.3,0.8)});
+    tone(t+ti*0.1,ti*0.85,out,{f:rnd(820,980),type:"sawtooth",gain:0.035,attack:0.15});
+  }
+  if(f==="pleura"){
+    const burst=(s)=>{for(let i=0;i<6;i++)noise(s+i*rnd(0.05,0.08),rnd(0.03,0.05),out,{type:"lowpass",f:420,q:2,gain:rnd(0.35,0.55)*zone,attack:0.003,release:0.02})};
+    burst(t+ti*0.6);burst(t+ti+0.05);
+  }
+  return cyc;
+}
+
+const PULSELESS=["vf","pvt","polyVT","torsade","pea","asystole"];
+const HW={ // Lautstärke je Abhörpunkt: S1, S2, Geräusch
+ normal:{},leise:{},
+ as:{ao:1,pu:0.6,erb:0.75,tr:0.45,mi:0.55},
+ mi:{ao:0.3,pu:0.3,erb:0.6,tr:0.5,mi:1},
+ ai:{ao:0.7,pu:0.5,erb:1,tr:0.5,mi:0.3},
+ s3:{ao:0.35,pu:0.35,erb:0.5,tr:0.7,mi:1},
+ reiben:{ao:0.6,pu:0.7,erb:1,tr:0.9,mi:0.7}};
+function heartThump(t,out,low,gain){
+  tone(t,0.14,out,{f:low,f2:low*0.8,gain,attack:0.008,decay:low<60?0.045:0.03});
+  tone(t+0.005,0.1,out,{f:low*1.6,gain:gain*0.45,attack:0.006,decay:0.025});
+  noise(t,0.06,out,{type:"lowpass",f:180,q:0.7,gain:gain*0.5,attack:0.004,release:0.04});
+}
+function heartCycle(v,t){
+  const p=v.p,f=S.heartSound||"normal",out=v.out;
+  const pulseless=PULSELESS.includes(S.rhythm)||S.hasPulse===false;
+  let hr=+S.heartRate||75;if(pulseless||hr<10)return 1;
+  let rr=60/hr;
+  if(S.rhythm==="afib"||S.rhythm==="afibLBBB"||S.arrhythmic)rr*=rnd(0.65,1.45);
+  const sys=Math.min(0.36,0.12+0.25*Math.min(rr,1));
+  const vol=f==="leise"?0.3:1;
+  const s1w={ao:0.75,pu:0.8,erb:0.85,tr:1,mi:1}[p.id],s2w={ao:1,pu:1,erb:0.85,tr:0.7,mi:0.65}[p.id];
+  heartThump(t,out,48,0.9*vol*s1w);
+  // S2 mit leichter physiologischer Spaltung in der Einatmung
+  heartThump(t+sys,out,68,0.65*vol*s2w);
+  const w=(HW[f]||{})[p.id]||0;
+  if(f==="as"){noise(t+0.05,sys-0.08,out,{f:360,q:1.4,gain:0.42*w,shape:(g,t0,d,gain)=>{g.setValueAtTime(0,t0);g.linearRampToValueAtTime(gain,t0+d*0.45);g.linearRampToValueAtTime(0,t0+d)}})}
+  if(f==="mi"){noise(t+0.03,sys-0.04,out,{f:520,q:2,gain:0.3*w,attack:0.03,release:0.03})}
+  if(f==="ai"){noise(t+sys+0.03,Math.min(0.42,rr-sys-0.12),out,{f:720,q:2.2,gain:0.3*w,shape:(g,t0,d,gain)=>{g.setValueAtTime(0,t0);g.linearRampToValueAtTime(gain,t0+0.02);g.exponentialRampToValueAtTime(0.001,t0+d)}})}
+  if(f==="s3"&&rr-sys>0.3){tone(t+sys+0.15,0.12,out,{f:36,gain:0.6*w,attack:0.015,decay:0.04})}
+  if(f==="reiben"){[t-0.08,t+sys*0.45,t+sys+0.12].forEach(s=>{for(let i=0;i<4;i++)noise(s+i*0.018,0.025,out,{f:rnd(500,900),q:0.8,gain:rnd(0.18,0.3)*w,attack:0.003,release:0.012})})}
+  return rr;
+}
+function bowelEvent(v,t){
+  const f=S.abdomenSound||"normal",out=v.out;
+  if(f==="stille")return 3;
+  const gurgle=(s,len,f0,f1,gain)=>{
+    const flt=noise(s,len,out,{f:f0,q:7,gain,shape:(g,t0,d,gn)=>{g.setValueAtTime(0,t0);
+      // blubbernd: mehrere kurze Bläschen
+      let x=t0;while(x<t0+d){const b=rnd(0.02,0.07);g.linearRampToValueAtTime(gn*rnd(0.3,1),x+b*0.3);g.linearRampToValueAtTime(gn*0.1,x+b);x+=b+rnd(0,0.04)}
+      g.linearRampToValueAtTime(0,t0+d+0.02)}});
+    flt.frequency.setValueAtTime(f0,s);flt.frequency.linearRampToValueAtTime(f1,s+len);
+  };
+  if(f==="normal"){gurgle(t,rnd(0.3,1.1),rnd(180,320),rnd(300,600),0.55);return rnd(1.5,5)}
+  if(f==="gesteigert"){gurgle(t,rnd(0.6,1.8),rnd(140,260),rnd(250,520),0.8);if(Math.random()<0.5)gurgle(t+rnd(0.2,0.6),rnd(0.3,0.8),rnd(200,350),rnd(350,650),0.6);return rnd(0.4,1.4)}
+  if(f==="klingend"){
+    // hochgestellt, metallisch klingend (Plätschern, „Tropfen in der Flasche“)
+    const n=2+Math.floor(Math.random()*4);for(let i=0;i<n;i++){const fr=rnd(1300,2600);tone(t+i*rnd(0.06,0.16),0.25,out,{f:fr,f2:fr*rnd(0.95,1.1),gain:rnd(0.08,0.16),attack:0.002,decay:rnd(0.04,0.09)})}
+    if(Math.random()<0.6)gurgle(t+0.3,rnd(0.3,0.7),rnd(400,700),rnd(700,1100),0.4);
+    return rnd(0.8,2.6);
+  }
+  if(f==="spaerlich"){gurgle(t,rnd(0.2,0.5),rnd(200,300),rnd(260,420),0.35);return rnd(9,18)}
+  return 2;
+}
+
+// ---------- Melder ----------
+const pg={mode:"standby",msgs:stored("vitMsgs",[]),infoIdx:0,alarmTimer:null,light:false};
+function pad(n){return String(n).padStart(2,"0")}
+function renderPager(){
+  const d=$("pDisp"),now=new Date(),P=$("pager");
+  P.classList.toggle("alarm",pg.mode==="alarm");
+  d.classList.toggle("lit",pg.mode!=="alarm"&&(pg.light||pg.mode!=="standby"));
+  const st=`<div class="st"><span><svg viewBox="0 0 22 12"><path d="M2 10h2M6 8v2M10 6v4M14 4v6M18 2v8"/></svg></span><span>${pad(now.getHours())}:${pad(now.getMinutes())}</span><span><svg viewBox="0 0 22 12"><rect x="1" y="2" width="17" height="8" rx="1.5"/><path d="M20 5v2"/><rect x="3" y="4" width="11" height="4" fill="currentColor" stroke="none"/></svg></span></div>`;
+  if(pg.mode==="standby"){
+    d.innerHTML=st+`<div class="ric">${RIC}</div><div class="clk">${pad(now.getHours())}:${pad(now.getMinutes())}</div><div style="text-align:center;font-size:12px;opacity:.8">${now.toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit",year:"numeric"})}</div>`;
+  }else{
+    const m=pg.mode==="info"?pg.msgs[pg.infoIdx]:pg.msgs[0];
+    if(!m){d.innerHTML=st+`<div class="ric">Keine Meldungen</div><div class="clk"></div>`;return}
+    const t=new Date(m.at*1000);
+    const title=pg.mode==="alarm"?"ALARM":pg.mode==="info"?`MELDUNG ${pg.infoIdx+1}/${pg.msgs.length}`:"EINSATZ";
+    d.innerHTML=`<div class="hdr"><span>${title}</span><span>${pad(t.getHours())}:${pad(t.getMinutes())}</span></div><div style="font-size:12px;margin-top:4px">${RIC}</div><div class="msg">${esc(m.text)}</div>`;
+  }
+}
+function esc(t){return String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+setInterval(()=>{if(view==="vPg"&&pg.mode==="standby")renderPager()},15000);
+// Alarmton: wiederkehrende, ansteigende Tonfolge wie beim Funkmeldeempfänger
+function alarmTone(){
+  const c=audio();if(!c)return;if(c.state==="suspended")c.resume();
+  let t=c.currentTime+0.05;
+  for(let r=0;r<3;r++){[2100,2500,2950].forEach(f=>{tone(t,0.11,master,{f,type:"square",gain:0.16});t+=0.13});t+=0.08}
+}
+function startAlarm(){
+  pg.mode="alarm";go("vPg");renderPager();
+  clearInterval(pg.alarmTimer);alarmTone();pg.alarmTimer=setInterval(alarmTone,1700);
+  try{navigator.vibrate&&navigator.vibrate([400,200,400,200,400])}catch(e){}
+}
+function stopAlarm(){clearInterval(pg.alarmTimer);pg.alarmTimer=null}
+function pagerBig(){
+  if(pg.mode==="alarm"){stopAlarm();pg.mode="read";beep(2600,0.05)}
+  else if(pg.mode==="read"||pg.mode==="info"){pg.mode="standby";beep(2600,0.04)}
+  else{pg.light=!pg.light;beep(2600,0.03)}
+  renderPager();
+}
+function pagerInfo(){
+  if(pg.mode==="alarm")return;
+  beep(2600,0.03);
+  if(!pg.msgs.length){pg.mode="info";pg.infoIdx=0}
+  else if(pg.mode!=="info"){pg.mode="info";pg.infoIdx=0}
+  else pg.infoIdx=(pg.infoIdx+1)%pg.msgs.length;
+  renderPager();
+}
+function handlePager(){
+  const id=+S.pagerAlarmID||0;if(!id)return;
+  const key="vitPagerId_"+code,last=stored(key,null);
+  if(last===id)return;
+  store(key,id);
+  const fresh=Date.now()/1000-(+S.pagerAlarmAt||0)<300;
+  if(!pg.msgs.some(m=>m.id===id)){pg.msgs.unshift({id,text:S.pagerText||"",at:+S.pagerAlarmAt||Date.now()/1000});pg.msgs=pg.msgs.slice(0,3);store("vitMsgs",pg.msgs)}
+  // Erstes Öffnen mit einem alten Einsatz: nur speichern, nicht alarmieren
+  if(last!==null&&fresh)startAlarm();
+  else if(last===null&&fresh)startAlarm();
+}
+
+// ---------- Verbindung (MQTT über öffentliche Broker, wie die Steuerseite) ----------
+let code=null,client=null,brokerIndex=0,everConnected=false,brokerTimer=null,lastSeen=0,monitorName="FM 112";
+const devId=stored("vitDevId",null)||(()=>{const id="v"+Math.random().toString(36).slice(2,10);store("vitDevId",id);return id})();
+const topic=t=>"c3sim/"+code+"/"+t;
+function onStatus(j){
+  if(!j||!j.state)return;
+  lastSeen=j.sentAt?Date.parse(j.sentAt):Date.now();
+  monitorName=j.monitorName||monitorName;
+  S={...DEF,...j.state};
+  handlePager();checkOnline();
+}
+window.__vitalsStatus=onStatus; // für Tests
+function hello(){if(client&&client.connected)client.publish(topic("vitals"),JSON.stringify({id:devId,name:"FM Vitals"}))}
+function connectBroker(){
+  if(typeof mqtt==="undefined"){$("connText").textContent="Offline (Verbindungsbaustein fehlt)";return}
+  if(client){client.removeAllListeners();client.end(true)}
+  everConnected=false;
+  const url=BROKERS[brokerIndex];
+  $("connText").textContent="Verbinde über "+new URL(url).hostname+" …";
+  client=mqtt.connect(url,{clientId:"c3vit-"+code+"-"+Math.random().toString(16).slice(2,8),clean:true,keepalive:30,connectTimeout:6000,reconnectPeriod:2000});
+  clearTimeout(brokerTimer);
+  brokerTimer=setTimeout(()=>{if(!everConnected){brokerIndex=(brokerIndex+1)%BROKERS.length;connectBroker()}},7000);
+  client.on("connect",()=>{everConnected=true;clearTimeout(brokerTimer);client.subscribe(topic("status"));hello();checkOnline()});
+  client.on("message",(t,payload)=>{try{onStatus(JSON.parse(payload.toString()))}catch(e){}});
+  client.on("offline",checkOnline);
+}
+function checkOnline(){
+  const ok=client&&client.connected&&Date.now()-lastSeen<20000;
+  $("dot").classList.toggle("ok",!!ok);
+  $("connText").textContent=ok?"Verbunden mit "+monitorName:!client||!client.connected?(everConnected?"Verbindung unterbrochen …":$("connText").textContent):"Warte auf Monitor "+code+" …";
+}
+function start(c){
+  code=c.toUpperCase().replace(/[^A-Z0-9]/g,"");store("vitCode",code);
+  $("codeInfo").textContent="Code "+code;
+  go("vHome");brokerIndex=0;connectBroker();
+}
+setInterval(hello,5000);
+setInterval(checkOnline,2000);
+
+// Bildschirm wach halten, damit der Melder auslösen kann
+let wakeLock=null;
+async function keepAwake(){try{if("wakeLock" in navigator&&document.visibilityState==="visible"&&!wakeLock){wakeLock=await navigator.wakeLock.request("screen");wakeLock.addEventListener("release",()=>{wakeLock=null})}}catch(e){}}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){keepAwake();hello()}});
+document.addEventListener("pointerdown",keepAwake,{once:true});
+
+// ---------- Bedienung ----------
+document.addEventListener("click",e=>{
+  const b=e.target.closest("button,[data-pt]");if(!b)return;
+  if(b.dataset.go){go(b.dataset.go);if(b.dataset.go==="vAu")bodySVG();return}
+  switch(b.id){
+    case "codeBtn":{const v=$("codeInput").value.trim();if(v.length>=6){history.replaceState(null,"","?code="+encodeURIComponent(v.toUpperCase()));start(v)}else toast("Bitte den 8-stelligen Code eingeben");return}
+    case "codeReset":store("vitCode",null);if(client)client.end(true);client=null;code=null;go("vCode");return;
+    case "bzPwr":bzPower();return;
+    case "bzMem":bzMemory();return;
+    case "bzStrip":bzStrip();return;
+    case "thPwr":thPower();return;
+    case "thMem":thMemory();return;
+    case "thStart":thStart();return;
+    case "stopBtn":stopVoice();return;
+    case "pBig":pagerBig();return;
+    case "pInfo":pagerInfo();return;
+    case "pLight":pg.light=!pg.light;renderPager();return;
+  }
+  if(b.dataset.reg){if(region!==b.dataset.reg){stopVoice();region=b.dataset.reg}bodySVG();return}
+  if(b.dataset.side){if(side!==b.dataset.side){stopVoice();side=b.dataset.side}bodySVG();return}
+  if(b.dataset.pt){
+    const pts=region==="lung"?POINTS["lung_"+side]:POINTS[region];const p=pts.find(x=>x.id===b.dataset.pt);
+    if(activePt&&activePt.id===p.id&&activePt.reg===region)stopVoice();else startVoice(region,p);
+  }
+});
+$("codeInput").addEventListener("keydown",e=>{if(e.key==="Enter")$("codeBtn").click()});
+
+bzRender();thRender();renderPager();
+const c0=new URLSearchParams(location.search).get("code")||stored("vitCode",null);
+if(c0)start(String(c0));else go("vCode");
+</script>
+</body>
+</html>
