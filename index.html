@@ -668,8 +668,6 @@ document.addEventListener("click",e=>{
 });
 $("codeInput").addEventListener("keydown",e=>{if(e.key==="Enter")$("codeBtn").click()});
 
-// Service Worker, damit Chrome und Samsung Internet die App zum Installieren anbieten
-if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 bzRender();thRender();renderPager();
 const c0=new URLSearchParams(location.search).get("code")||stored("vitCode",null);
 if(c0)start(String(c0));else go("vCode");
