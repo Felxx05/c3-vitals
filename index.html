@@ -599,9 +599,14 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 let code=null,client=null,everConnected=false,lastSeen=0,monitorName="FM 112";
 const devId=stored("vitDevId",null)||(()=>{const id="v"+Math.random().toString(36).slice(2,10);store("vitDevId",id);return id})();
 const topic=t=>"c3sim/"+code+"/"+t;
+// Lebenszeichen nach der eigenen Uhr messen: Die Uhren von iPad und Handy gehen oft um
+// Sekunden auseinander. Nur die erste Meldung nach dem Verbinden (evtl. die beim Broker
+// gespeicherte alte) wird nach ihrem Zeitstempel beurteilt; jede weitere ist neuer und damit live.
+let statusCount=0;
+function seenAt(j){return statusCount++===0&&j.sentAt?Date.parse(j.sentAt):Date.now()}
 function onStatus(j){
   if(!j||!j.state)return;
-  lastSeen=j.sentAt?Date.parse(j.sentAt):Date.now();
+  lastSeen=seenAt(j);
   monitorName=j.monitorName||monitorName;
   S={...DEF,...j.state};
   handlePager();checkOnline();
@@ -644,7 +649,7 @@ function onRelay(p,t){
   }
   const j=freshStatus(p);if(!j)return;
   if(lastCtl&&Date.now()-lastCtl.at<6000&&!(j.ack&&(j.ack[lastCtl.from]||0)>=lastCtl.seq)){
-    lastSeen=j.sentAt?Date.parse(j.sentAt):Date.now();checkOnline();return;
+    lastSeen=seenAt(j);checkOnline();return;
   }
   onStatus(j);
 }
@@ -663,7 +668,7 @@ function checkOnline(){
 function start(c){
   code=c.toUpperCase().replace(/[^A-Z0-9]/g,"");store("vitCode",code);
   $("codeInfo").textContent="Code "+code;
-  go("vHome");lastSent=0;connectBroker();
+  go("vHome");lastSent=0;statusCount=0;connectBroker();
 }
 setInterval(hello,5000);
 setInterval(checkOnline,2000);
