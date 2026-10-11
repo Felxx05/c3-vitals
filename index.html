@@ -613,34 +613,44 @@ function onStatus(j){
 }
 window.__vitalsStatus=onStatus; // für Tests
 function hello(){if(client&&client.connected)client.publish(topic("vitals"),JSON.stringify({id:devId,name:"FM Vitals"}))}
-// Eine Verbindung zu einem Broker. Klappt sie nicht oder bleibt sie länger als 10 s weg,
-// wird der nächste Broker probiert; der zuletzt funktionierende wird gemerkt.
-// (Mehrere Verbindungen gleichzeitig führten bei einigen Geräten zu ständigen Abbrüchen.)
+// Eine Verbindung zu einem Broker: Beim Start versuchen es alle gleichzeitig, der erste,
+// der antwortet, gewinnt, die anderen werden sofort geschlossen. Bleibt die Verbindung
+// länger als 6 s weg, wird neu ausgewählt. (Dauerhaft mehrere Verbindungen gleichzeitig
+// führten bei einigen Geräten zu ständigen Abbrüchen.)
 function relayClient(prefix,onConnect,onMessage,onChange,topics=["status"]){
   const id=prefix+"-"+code+"-"+Math.random().toString(16).slice(2,8);
   const echo=topic("echo/"+id);
-  let idx=0;try{idx=(parseInt(localStorage.getItem("relayBroker"))||0)%BROKERS.length}catch(e){}
-  let c=null,rtt=null,drops=0,up=false,downSince=Date.now(),dead=false;
-  function open(){
-    if(c){c.removeAllListeners();c.end(true)}
-    rtt=null;up=false;downSince=Date.now();
-    c=mqtt.connect(BROKERS[idx],{clientId:id,clean:true,keepalive:30,connectTimeout:6000,reconnectPeriod:3000});
-    c.on("connect",()=>{up=true;try{localStorage.setItem("relayBroker",String(idx))}catch(e){}
-      topics.forEach(x=>c.subscribe(topic(x)));c.subscribe(echo);onConnect(c);onChange()});
-    c.on("message",(t,p)=>{
-      // Eigenes Echo: Laufzeit messen
-      if(t===echo){try{rtt=Date.now()-JSON.parse(p.toString()).t}catch(e){}showRtt();return}
-      onMessage(p.toString(),t)});
-    c.on("close",()=>{if(up){drops++;up=false;downSince=Date.now()}rtt=null;onChange();showRtt()});
-    c.on("offline",onChange);
+  let c=null,idx=-1,tries=[],rtt=null,drops=0,up=false,downSince=Date.now(),dead=false;
+  function drop(x){x.removeAllListeners();x.end(true)}
+  function onUp(){
+    up=true;topics.forEach(x=>c.subscribe(topic(x)));c.subscribe(echo);onConnect(c);onChange();showRtt();
   }
-  const timer=setInterval(()=>{if(!dead&&!c.connected&&Date.now()-downSince>10000){idx=(idx+1)%BROKERS.length;open()}},2000);
-  open();
+  function race(){
+    if(c){drop(c);c=null}
+    tries.forEach(drop);rtt=null;up=false;downSince=Date.now();onChange();showRtt();
+    tries=BROKERS.map((u,i)=>{
+      const t=mqtt.connect(u,{clientId:id+"-"+i,clean:true,keepalive:30,connectTimeout:8000,reconnectPeriod:2000});
+      t.once("connect",()=>{
+        if(c)return;
+        c=t;idx=i;tries.filter(o=>o!==t).forEach(drop);tries=[];
+        t.on("connect",onUp);
+        t.on("message",(tp,p)=>{
+          // Eigenes Echo: Laufzeit messen
+          if(tp===echo){try{rtt=Date.now()-JSON.parse(p.toString()).t}catch(e){}showRtt();return}
+          onMessage(p.toString(),tp)});
+        t.on("close",()=>{if(up){drops++;up=false;downSince=Date.now()}rtt=null;onChange();showRtt()});
+        t.on("offline",onChange);
+        onUp();
+      });
+      return t});
+  }
+  const timer=setInterval(()=>{if(!dead&&c&&!c.connected&&Date.now()-downSince>6000)race()},2000);
+  race();
   return{get connected(){return !!c&&c.connected},
     publish(t,m){if(c&&c.connected)c.publish(t,m)},
-    end(){dead=true;clearInterval(timer);if(c){c.removeAllListeners();c.end(true)}},
+    end(){dead=true;clearInterval(timer);tries.forEach(drop);if(c)drop(c)},
     ping(){if(c&&c.connected)c.publish(echo,JSON.stringify({t:Date.now()}))},
-    info(){return new URL(BROKERS[idx]).hostname.split(".").slice(-2,-1)[0]+": "+(c&&c.connected?(rtt!=null?rtt+" ms":"verbunden"):"getrennt")+" · Abbrüche "+drops}};
+    info(){return !c?"wird gesucht …":new URL(BROKERS[idx]).hostname.split(".").slice(-2,-1)[0]+": "+(c.connected?(rtt!=null?rtt+" ms":"verbunden"):"getrennt")+" · Abbrüche "+drops}};
 }
 function showRtt(){const el=$("rtt");if(el&&client&&client.info)el.textContent="Server "+client.info()}
 setInterval(()=>{if(client&&client.ping){client.ping();showRtt()}},4000);
