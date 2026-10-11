@@ -613,35 +613,36 @@ function onStatus(j){
 }
 window.__vitalsStatus=onStatus; // für Tests
 function hello(){if(client&&client.connected)client.publish(topic("vitals"),JSON.stringify({id:devId,name:"FM Vitals"}))}
-// Mit allen Brokern gleichzeitig verbinden: gesendet wird über alle, empfangen wird die jeweils
-// erste Kopie (doppelte und ältere Meldungen werden verworfen). So bremst ein langsamer Broker nicht.
-function multiClient(prefix,onConnect,onMessage,onChange,topics=["status"]){
+// Eine Verbindung zu einem Broker. Klappt sie nicht oder bleibt sie länger als 10 s weg,
+// wird der nächste Broker probiert; der zuletzt funktionierende wird gemerkt.
+// (Mehrere Verbindungen gleichzeitig führten bei einigen Geräten zu ständigen Abbrüchen.)
+function relayClient(prefix,onConnect,onMessage,onChange,topics=["status"]){
   const id=prefix+"-"+code+"-"+Math.random().toString(16).slice(2,8);
   const echo=topic("echo/"+id);
-  const cs=BROKERS.map((u,i)=>{
-    const c=mqtt.connect(u,{clientId:id+i,clean:true,keepalive:30,connectTimeout:6000,reconnectPeriod:3000});
-    c.drops=0;
-    c.on("connect",()=>{topics.forEach(x=>c.subscribe(topic(x)));c.subscribe(echo);onConnect(c);onChange()});
+  let idx=0;try{idx=(parseInt(localStorage.getItem("relayBroker"))||0)%BROKERS.length}catch(e){}
+  let c=null,rtt=null,drops=0,up=false,downSince=Date.now(),dead=false;
+  function open(){
+    if(c){c.removeAllListeners();c.end(true)}
+    rtt=null;up=false;downSince=Date.now();
+    c=mqtt.connect(BROKERS[idx],{clientId:id,clean:true,keepalive:30,connectTimeout:6000,reconnectPeriod:3000});
+    c.on("connect",()=>{up=true;try{localStorage.setItem("relayBroker",String(idx))}catch(e){}
+      topics.forEach(x=>c.subscribe(topic(x)));c.subscribe(echo);onConnect(c);onChange()});
     c.on("message",(t,p)=>{
-      // Eigenes Echo: Laufzeit über diesen Broker messen
-      if(t===echo){try{c.rtt=Date.now()-JSON.parse(p.toString()).t}catch(e){}showRtt();return}
+      // Eigenes Echo: Laufzeit messen
+      if(t===echo){try{rtt=Date.now()-JSON.parse(p.toString()).t}catch(e){}showRtt();return}
       onMessage(p.toString(),t)});
+    c.on("close",()=>{if(up){drops++;up=false;downSince=Date.now()}rtt=null;onChange();showRtt()});
     c.on("offline",onChange);
-    c.on("close",()=>{if(c.wasUp)c.drops++;c.wasUp=false;c.rtt=null;onChange();showRtt()});
-    c.on("connect",()=>{c.wasUp=true});
-    return c});
-  return{get connected(){return cs.some(c=>c.connected)},
-    publish(t,m){cs.forEach(c=>{if(c.connected)c.publish(t,m)})},
-    end(){cs.forEach(c=>{c.removeAllListeners();c.end(true)})},
-    ping(){cs.forEach(c=>{if(c.connected)c.publish(echo,JSON.stringify({t:Date.now()}))})},
-    info(){return cs.map(c=>c.connected?(c.rtt!=null?c.rtt+" ms":"✓"):"–")},
-    drops(){return cs.map(c=>c.drops).join("/")}};
+  }
+  const timer=setInterval(()=>{if(!dead&&!c.connected&&Date.now()-downSince>10000){idx=(idx+1)%BROKERS.length;open()}},2000);
+  open();
+  return{get connected(){return !!c&&c.connected},
+    publish(t,m){if(c&&c.connected)c.publish(t,m)},
+    end(){dead=true;clearInterval(timer);if(c){c.removeAllListeners();c.end(true)}},
+    ping(){if(c&&c.connected)c.publish(echo,JSON.stringify({t:Date.now()}))},
+    info(){return new URL(BROKERS[idx]).hostname.split(".").slice(-2,-1)[0]+": "+(c&&c.connected?(rtt!=null?rtt+" ms":"verbunden"):"getrennt")+" · Abbrüche "+drops}};
 }
-// Zustand je Server unten anzeigen (zur Fehlersuche bei Verbindungsabbrüchen)
-function showRtt(){
-  const el=$("rtt");if(!el||!client||!client.drops)return;
-  el.textContent="Server: "+client.info().join(" · ")+" · Abbrüche "+client.drops();
-}
+function showRtt(){const el=$("rtt");if(el&&client&&client.info)el.textContent="Server "+client.info()}
 setInterval(()=>{if(client&&client.ping){client.ping();showRtt()}},4000);
 let lastSent=0,seenNow=new Set();
 function freshStatus(p){
@@ -674,7 +675,7 @@ function connectBroker(){
   if(client)client.end();
   everConnected=false;
   $("connText").textContent="Verbinde …";
-  client=multiClient("c3vit",c=>{everConnected=true;c.publish(topic("vitals"),JSON.stringify({id:devId,name:"FM Vitals"}))},onRelay,checkOnline,["status","control"]);
+  client=relayClient("c3vit",c=>{everConnected=true;c.publish(topic("vitals"),JSON.stringify({id:devId,name:"FM Vitals"}))},onRelay,checkOnline,["status","control"]);
 }
 function checkOnline(){
   const ok=client&&client.connected&&Date.now()-lastSeen<20000;
