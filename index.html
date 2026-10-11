@@ -596,7 +596,7 @@ setInterval(armCheck,1500);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(armCheck,300)});
 
 // ---------- Verbindung (MQTT über öffentliche Broker, wie die Steuerseite) ----------
-let code=null,client=null,brokerIndex=0,everConnected=false,brokerTimer=null,lastSeen=0,monitorName="FM 112";
+let code=null,client=null,everConnected=false,lastSeen=0,monitorName="FM 112";
 const devId=stored("vitDevId",null)||(()=>{const id="v"+Math.random().toString(36).slice(2,10);store("vitDevId",id);return id})();
 const topic=t=>"c3sim/"+code+"/"+t;
 function onStatus(j){
@@ -608,18 +608,35 @@ function onStatus(j){
 }
 window.__vitalsStatus=onStatus; // für Tests
 function hello(){if(client&&client.connected)client.publish(topic("vitals"),JSON.stringify({id:devId,name:"FM Vitals"}))}
+// Mit allen Brokern gleichzeitig verbinden: gesendet wird über alle, empfangen wird die jeweils
+// erste Kopie (doppelte und ältere Meldungen werden verworfen). So bremst ein langsamer Broker nicht.
+function multiClient(prefix,onConnect,onMessage,onChange){
+  const id=prefix+"-"+code+"-"+Math.random().toString(16).slice(2,8);
+  const cs=BROKERS.map((u,i)=>{
+    const c=mqtt.connect(u,{clientId:id+i,clean:true,keepalive:30,connectTimeout:6000,reconnectPeriod:3000});
+    c.on("connect",()=>{c.subscribe(topic("status"));onConnect(c);onChange()});
+    c.on("message",(t,p)=>onMessage(p.toString()));
+    c.on("offline",onChange);c.on("close",onChange);
+    return c});
+  return{get connected(){return cs.some(c=>c.connected)},
+    publish(t,m){cs.forEach(c=>{if(c.connected)c.publish(t,m)})},
+    end(){cs.forEach(c=>{c.removeAllListeners();c.end(true)})}};
+}
+let lastSent=0,seenNow=new Set();
+function freshStatus(p){
+  let j;try{j=JSON.parse(p)}catch(e){return null}
+  const t=j.sentAt?Date.parse(j.sentAt):0;
+  if(t&&t<lastSent)return null;
+  if(t>lastSent){lastSent=t;seenNow=new Set()}
+  if(seenNow.has(p))return null;
+  seenNow.add(p);return j;
+}
 function connectBroker(){
   if(typeof mqtt==="undefined"){$("connText").textContent="Offline (Verbindungsbaustein fehlt)";return}
-  if(client){client.removeAllListeners();client.end(true)}
+  if(client)client.end();
   everConnected=false;
-  const url=BROKERS[brokerIndex];
-  $("connText").textContent="Verbinde über "+new URL(url).hostname+" …";
-  client=mqtt.connect(url,{clientId:"c3vit-"+code+"-"+Math.random().toString(16).slice(2,8),clean:true,keepalive:30,connectTimeout:6000,reconnectPeriod:2000});
-  clearTimeout(brokerTimer);
-  brokerTimer=setTimeout(()=>{if(!everConnected){brokerIndex=(brokerIndex+1)%BROKERS.length;connectBroker()}},7000);
-  client.on("connect",()=>{everConnected=true;clearTimeout(brokerTimer);client.subscribe(topic("status"));hello();checkOnline()});
-  client.on("message",(t,payload)=>{try{onStatus(JSON.parse(payload.toString()))}catch(e){}});
-  client.on("offline",checkOnline);
+  $("connText").textContent="Verbinde …";
+  client=multiClient("c3vit",c=>{everConnected=true;c.publish(topic("vitals"),JSON.stringify({id:devId,name:"FM Vitals"}))},p=>{const j=freshStatus(p);if(j)onStatus(j)},checkOnline);
 }
 function checkOnline(){
   const ok=client&&client.connected&&Date.now()-lastSeen<20000;
@@ -629,7 +646,7 @@ function checkOnline(){
 function start(c){
   code=c.toUpperCase().replace(/[^A-Z0-9]/g,"");store("vitCode",code);
   $("codeInfo").textContent="Code "+code;
-  go("vHome");brokerIndex=0;connectBroker();
+  go("vHome");lastSent=0;connectBroker();
 }
 setInterval(hello,5000);
 setInterval(checkOnline,2000);
@@ -646,7 +663,7 @@ document.addEventListener("click",e=>{
   if(b.dataset.go){go(b.dataset.go);if(b.dataset.go==="vAu")bodySVG();return}
   switch(b.id){
     case "codeBtn":{const v=$("codeInput").value.trim();if(v.length>=6){history.replaceState(null,"","?code="+encodeURIComponent(v.toUpperCase()));start(v)}else toast("Bitte den 8-stelligen Code eingeben");return}
-    case "codeReset":store("vitCode",null);if(client)client.end(true);client=null;code=null;go("vCode");return;
+    case "codeReset":store("vitCode",null);if(client)client.end();client=null;code=null;go("vCode");return;
     case "bzPwr":bzPower();return;
     case "bzMem":bzMemory();return;
     case "bzStrip":bzStrip();return;
