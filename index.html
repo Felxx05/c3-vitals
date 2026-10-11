@@ -608,6 +608,11 @@ function onStatus(j){
 }
 window.__vitalsStatus=onStatus; // für Tests
 function hello(){if(client&&client.connected)client.publish(topic("vitals"),JSON.stringify({id:devId,name:"FM Vitals"}))}
+// Der Monitor ist nicht immer über alle Broker erreichbar. Kommt über den gewählten Broker
+// 12 s lang nichts Neues vom Monitor (die erste, gespeicherte Meldung zählt nicht),
+// wird der nächste Broker probiert, bis der Monitor gefunden ist.
+let liveAt=0,msgCount=0;
+setInterval(()=>{if(client&&client.connected&&code&&Date.now()-liveAt>12000){brokerIndex=(brokerIndex+1)%BROKERS.length;connectBroker()}},2000);
 function connectBroker(){
   if(typeof mqtt==="undefined"){$("connText").textContent="Offline (Verbindungsbaustein fehlt)";return}
   if(client){client.removeAllListeners();client.end(true)}
@@ -617,8 +622,8 @@ function connectBroker(){
   client=mqtt.connect(url,{clientId:"c3vit-"+code+"-"+Math.random().toString(16).slice(2,8),clean:true,keepalive:30,connectTimeout:6000,reconnectPeriod:2000});
   clearTimeout(brokerTimer);
   brokerTimer=setTimeout(()=>{if(!everConnected){brokerIndex=(brokerIndex+1)%BROKERS.length;connectBroker()}},7000);
-  client.on("connect",()=>{everConnected=true;clearTimeout(brokerTimer);client.subscribe(topic("status"));hello();checkOnline()});
-  client.on("message",(t,payload)=>{try{onStatus(JSON.parse(payload.toString()))}catch(e){}});
+  client.on("connect",()=>{everConnected=true;clearTimeout(brokerTimer);liveAt=Date.now();msgCount=0;client.subscribe(topic("status"));hello();checkOnline()});
+  client.on("message",(t,payload)=>{msgCount++;if(msgCount>1)liveAt=Date.now();try{onStatus(JSON.parse(payload.toString()))}catch(e){}});
   client.on("offline",checkOnline);
 }
 function checkOnline(){
