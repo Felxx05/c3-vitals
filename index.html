@@ -15,7 +15,7 @@
 <style>
 :root{--bg:#000;--panel:#141414;--line:#2a2a2a;--text:#f2f2f2;--sub:#8e8e93;--key:#2c2c2e;--green:#30d158;--red:#ff453a;--blue:#64d2ff;--orange:#ff9f0a;--yellow:#ffd60a;--pink:#ff6ac1;
  --safe-t:env(safe-area-inset-top);--safe-b:env(safe-area-inset-bottom)}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+*{box-sizing:border-box;touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:16px/1.35 -apple-system,system-ui,sans-serif;overscroll-behavior:none}
 button{font:inherit;color:inherit;cursor:pointer}
 .view{position:fixed;inset:0;display:none;flex-direction:column;padding:calc(var(--safe-t) + 8px) 16px calc(var(--safe-b) + 12px);max-width:560px;margin:0 auto;overflow-y:auto}
@@ -717,11 +717,31 @@ function rrPump(){
 function rrValve(){rr.valve=!rr.valve;rrRender()}
 function rrDump(){rr.dump=true;rr.valve=false;rrRender()}
 function rrRender(){$("rrValve").classList.toggle("on",rr.valve);$("rrValve").textContent=rr.valve?"Ventil schließen":"Ventil öffnen";$("rrDump").classList.toggle("on",rr.dump)}
-// Ein Korotkow-Ton: dumpfer Schlag plus kurzes Rauschen; in Phase IV gedämpft
+// Ein Korotkow-Ton: der erste Herzton aus der echten Stethoskop-Aufnahme, tiefer und gefiltert,
+// so klingt er wie das Klopfen unter der Manschette. Phase II mit Strömungsrauschen, Phase IV dumpf.
+// Ohne geladene Aufnahme: synthetischer Schlag mit Obertönen (auch auf Handy-Lautsprechern hörbar).
+let koroIdx=0;
 function koro(strength,muffled,swish){
-  const c=audio();if(!c)return;const t=c.currentTime;
-  tone(t,0.1,master,{f:muffled?52:72,f2:38,gain:0.7*strength,attack:0.003,decay:muffled?0.045:0.03});
-  noise(t,swish?0.14:0.06,master,{type:"bandpass",f:muffled?110:swish?320:200,q:1.1,gain:(muffled?0.18:0.32)*strength,attack:0.003,release:swish?0.1:0.05});
+  const c=audio();if(!c)return;const t=c.currentTime+0.005;
+  const lp=c.createBiquadFilter();lp.type="lowpass";lp.frequency.value=muffled?260:swish?520:900;lp.Q.value=0.7;
+  const g=c.createGain();g.gain.value=1;lp.connect(g);g.connect(master);
+  const s=SND.heart_normal;
+  if(s){const i=koroIdx++%s.marks.length,src=c.createBufferSource(),e=c.createGain(),d=muffled?0.16:0.12,rate=muffled?0.78:0.88;
+    src.buffer=s.buf;src.playbackRate.value=rate;
+    e.gain.setValueAtTime(0,t);e.gain.linearRampToValueAtTime(2.2*strength,t+0.004);e.gain.setValueAtTime(2.2*strength,t+d*0.6);e.gain.linearRampToValueAtTime(0,t+d);
+    src.connect(e);e.connect(lp);src.start(t,Math.max(0,s.marks[i]+0.015));src.stop(t+d+0.02)}
+  else{tone(t,0.12,lp,{f:muffled?95:130,f2:70,type:"triangle",gain:0.8*strength,attack:0.002,decay:muffled?0.04:0.025});
+    noise(t,0.05,lp,{type:"lowpass",f:500,q:0.7,gain:0.35*strength,attack:0.002,release:0.04})}
+  if(swish)noise(t+0.01,0.16,master,{type:"bandpass",f:240,q:0.9,gain:0.14*strength,attack:0.03,release:0.1});
+}
+// Leises Rauschen im Stethoskop, solange die Manschette Druck hat
+let rrBed=null;
+function rrBedSet(on){
+  const c=ctx;if(!c)return;
+  if(on&&!rrBed){const src=c.createBufferSource();src.buffer=noiseBuf;src.loop=true;
+    const f=c.createBiquadFilter();f.type="lowpass";f.frequency.value=180;const g=c.createGain();g.gain.value=0;
+    src.connect(f);f.connect(g);g.connect(master);src.start();g.gain.setTargetAtTime(0.05,c.currentTime,0.2);rrBed={src,g}}
+  else if(!on&&rrBed){const b=rrBed;rrBed=null;b.g.gain.setTargetAtTime(0,c.currentTime,0.1);b.src.stop(c.currentTime+0.6)}
 }
 function rrBeat(){
   const sys=+S.nibpSys||120,dia=Math.min(+S.nibpDia||80,sys-5),p=rr.p;
@@ -735,10 +755,10 @@ function rrBeat(){
   else if(x<0.85)koro(1,false,false);          // Phase III: kräftig, scharf
   else koro(0.55,true,false);                  // Phase IV: gedämpft, danach Stille (V)
 }
-function rrLoop(ts){
+function rrStep(ts){
   const dt=rr.last?Math.min(0.1,(ts-rr.last)/1000):0;rr.last=ts;
   if(rr.dump){rr.p-=40*dt;if(rr.p<=0){rr.p=0;rr.dump=false;rrRender()}}
-  else if(rr.valve&&rr.p>0)rr.p=Math.max(0,rr.p-3*dt);
+  else if(rr.valve&&rr.p>0)rr.p=Math.max(0,rr.p-5*dt);
   rr.bump*=Math.exp(-dt*9);
   const pulseless=PULSELESS.includes(S.rhythm)||S.hasPulse===false,hr=+S.heartRate||75;
   if(view==="vBp"&&!pulseless&&hr>=10){
@@ -749,8 +769,10 @@ function rrLoop(ts){
     }
   }else rr.nextBeat=0;
   if(view==="vBp")rrNeedle();
-  requestAnimationFrame(rrLoop);
+  rrBedSet(view==="vBp"&&rr.p>3);
 }
+// Schleifen laufen weiter, auch wenn ein einzelner Schritt (z. B. Audio) einen Fehler wirft
+function rrLoop(ts){try{rrStep(ts)}catch(e){}requestAnimationFrame(rrLoop)}
 
 // ---------- Pupillen ----------
 // Weite in mm; nur das angeleuchtete Auge reagiert, je nach seiner eingestellten Lichtreaktion.
@@ -770,7 +792,7 @@ function puInit(){
   $("eyeR").querySelector("svg").innerHTML=puEyeSVG("R");
   $("eyeL").querySelector("svg").innerHTML=puEyeSVG("L");
 }
-function puLoop(ts){
+function puStep(ts){
   const dt=pu.last?Math.min(0.1,(ts-pu.last)/1000):0;pu.last=ts;
   for(const e of ["R","L"]){
     const base=PU_SIZE[e==="R"?S.pupilRight:S.pupilLeft]||3.5,re=PU_REACT[e==="R"?S.pupilReactRight:S.pupilReactLeft]||PU_REACT.prompt;
@@ -784,8 +806,8 @@ function puLoop(ts){
       const g=$("gl"+e);if(g)g.setAttribute("opacity",pu.light===e?"1":".35");
     }
   }
-  requestAnimationFrame(puLoop);
 }
+function puLoop(ts){try{puStep(ts)}catch(e){}requestAnimationFrame(puLoop)}
 function puLight(e){pu.light=e;pu.since=performance.now();$("eyeR").classList.toggle("lit",e==="R");$("eyeL").classList.toggle("lit",e==="L")}
 ["eyeR","eyeL"].forEach(id=>$(id).addEventListener("pointerdown",ev=>{ev.preventDefault();puLight(id==="eyeR"?"R":"L")}));
 ["pointerup","pointercancel"].forEach(n=>document.addEventListener(n,()=>{if(pu.light)puLight(null)}));
@@ -806,7 +828,7 @@ document.addEventListener("click",e=>{
     case "stopBtn":stopVoice();return;
     case "pBig":pagerBig();return;
     case "pInfo":pagerInfo();return;
-    case "rrPump":rrPump();return;
+    case "rrPump":return;
     case "rrValve":rrValve();return;
     case "rrDump":rrDump();return;
     case "pAux":if(pg.mode!=="alarm"){unlock();startAlarm(true)}return;
@@ -819,6 +841,9 @@ document.addEventListener("click",e=>{
     if(activePt&&activePt.id===p.id&&activePt.reg===region)stopVoice();else startVoice(region,p);
   }
 });
+// Pumpball reagiert sofort beim Berühren, auch bei schnellem Pumpen
+$("rrPump").addEventListener("pointerdown",ev=>{ev.preventDefault();rrPump()});
+["gesturestart","dblclick"].forEach(n=>document.addEventListener(n,e=>e.preventDefault()));
 $("codeInput").addEventListener("keydown",e=>{if(e.key==="Enter")$("codeBtn").click()});
 
 bzRender();thRender();renderPager();rrGauge();rrNeedle();rrRender();puInit();requestAnimationFrame(rrLoop);requestAnimationFrame(puLoop);
