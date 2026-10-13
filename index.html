@@ -68,12 +68,14 @@ button{font:inherit;color:inherit;cursor:pointer}
 .key.pwr{color:#c0392b}
 .keylbl{font:600 11px -apple-system;color:#41546a;text-align:center;margin-top:6px}
 .bz .slot{width:120px;height:22px;background:#3d4a59;border-radius:6px 6px 0 0;margin-top:auto;position:relative}
-.strip{position:relative;width:64px;height:120px;margin-top:-4px;background:linear-gradient(#f4f4f0,#e0e0d8);border-radius:4px 4px 10px 10px;box-shadow:0 6px 14px #0007;border:0;display:flex;align-items:flex-end;justify-content:center;padding:0 0 10px}
-.strip::before{content:"";position:absolute;left:24px;right:24px;top:6px;bottom:38px;background:repeating-linear-gradient(#c9a227 0 3px,transparent 3px 8px);opacity:.7}
-.strip .drop{width:30px;height:30px;border-radius:50%;background:#d6d6cf;box-shadow:inset 0 2px 4px #0003;position:relative}
-.strip.blood .drop{background:radial-gradient(circle at 35% 35%,#ff5a5a,#8b0000)}
-.strip.ready .drop{animation:pulse 1.2s ease-in-out infinite}
-@keyframes pulse{50%{box-shadow:0 0 0 8px #ff453a55,inset 0 2px 4px #0003}}
+.bz{z-index:1}
+.strip{position:relative;z-index:0;width:72px;height:211px;margin-top:-18px;background:none;border:0;padding:0;filter:drop-shadow(0 6px 8px #0007)}
+.strip svg{width:100%;height:100%;display:block;overflow:visible}
+.strip .drop{transform-origin:30px 170px;transform:scale(0);transition:transform .35s cubic-bezier(.3,1.6,.5,1)}
+.strip.blood .drop{transform:scale(1)}
+.strip .glow{fill:none;stroke:#ff453a;stroke-width:3;opacity:0}
+.strip.ready .glow{animation:tipglow 1.2s ease-in-out infinite}
+@keyframes tipglow{50%{opacity:.7}}
 
 /* Ohrthermometer */
 .th{position:relative;width:min(230px,62vw);height:min(470px,62vh);margin:0 auto}
@@ -235,7 +237,17 @@ button{font:inherit;color:inherit;cursor:pointer}
       </div>
       <div class="slot"></div>
     </div>
-    <button class="strip" id="bzStrip" aria-label="Blut auf den Teststreifen geben"><span class="drop"></span></button>
+    <button class="strip" id="bzStrip" aria-label="Blut auf den Teststreifen geben"><svg viewBox="0 0 60 176">
+      <defs><radialGradient id="bloodG" cx=".35" cy=".35" r=".8"><stop offset="0" stop-color="#ff5a5a"/><stop offset="1" stop-color="#8b0000"/></radialGradient></defs>
+      <rect x="4" y="0" width="52" height="152" rx="2" fill="#fbfbf8" stroke="#d2d2ca"/>
+      <g fill="#1c1c1c"><path d="M9 0h8v24h-8z"/><path d="M20 0h8v20h3v8h-11z"/><path d="M33 0h8v26h-8z"/><path d="M44 0h7v22h-7z"/></g>
+      <path d="M30 56l-15 17h9v24h12v-24h9z" fill="#f2874a"/>
+      <path d="M4 124h52v24l-17 20h-18l-17-20z" fill="#f2874a"/>
+      <rect x="26.5" y="145" width="7" height="10" rx="3.5" fill="#fbfbf8"/>
+      <rect x="29" y="159" width="2" height="9" fill="#1c1c1c"/>
+      <path class="glow" d="M4 148l17 20h18l17-20"/>
+      <g class="drop"><path d="M30 160c-6 8-9 11-9 15a9 9 0 0 0 18 0c0-4-3-7-9-15z" fill="url(#bloodG)"/><ellipse cx="26.5" cy="172" rx="2" ry="3" fill="#fff6"/></g>
+    </svg></button>
     <div class="hint" id="bzHint">Gerät einschalten</div>
   </div>
 </section>
