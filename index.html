@@ -813,14 +813,14 @@ function rrBedSet(on){
     src.connect(f);f.connect(g);g.connect(master);src.start();g.gain.setTargetAtTime(0.05,c.currentTime,0.2);rrBed={src,g}}
   else if(!on&&rrBed){const b=rrBed;rrBed=null;b.g.gain.setTargetAtTime(0,c.currentTime,0.1);b.src.stop(c.currentTime+0.6)}
 }
-function rrBeat(){
-  const sys=+S.nibpSys||120,dia=Math.min(+S.nibpDia||80,sys-5),p=rr.p;
+function rrBeat(at){
+  const sys=+S.nibpSys||120,dia=Math.min(+S.nibpDia||80,sys-5),p=at===undefined?rr.p:at;
   // Nadelzucken (oszillometrisch), am stärksten um den Mitteldruck
   const map=dia+(sys-dia)/3,wid=(sys-dia)*0.45+8;
   rr.bump=p>5?2.6*Math.exp(-Math.pow((p-map)/wid,2)):0;
   if(p>sys||p<=dia)return;
   const x=(sys-p)/(sys-dia);
-  if(x<0.12)koro(0.45+x*3,false,false);        // Phase I: leises, klares Klopfen
+  if(x<0.12)koro(0.8+x*1.5,false,false);       // Phase I: klares Klopfen, sofort deutlich hörbar
   else if(x<0.3)koro(0.5,false,true);          // Phase II: schwirrend
   else if(x<0.85)koro(1,false,false);          // Phase III: kräftig, scharf
   else koro(0.55,true,false);                  // Phase IV: gedämpft, danach Stille (V)
@@ -831,9 +831,17 @@ function rrStep(ts){
   else if(rr.valve&&rr.p>0)rr.p=Math.max(0,rr.p-5*dt);
   rr.bump*=Math.exp(-dt*9);
   const pulseless=PULSELESS.includes(S.rhythm)||S.hasPulse===false,hr=+S.heartRate||75;
+  // Fällt der Druck genau über den eingestellten Sys- bzw. Dia-Wert, kommt der Schlag sofort:
+  // erster Ton exakt beim Sys-Wert, letzter Ton exakt beim Dia-Wert (sonst bis zu 1 Schlag später).
+  const sys=+S.nibpSys||120,dia=Math.min(+S.nibpDia||80,sys-5),prev=rr.prevP===undefined?rr.p:rr.prevP;rr.prevP=rr.p;
+  const crossSys=prev>sys&&rr.p<=sys,crossDia=prev>dia+0.5&&rr.p<=dia+0.5;
   if(view==="vBp"&&!pulseless&&hr>=10){
-    if(ts>=rr.nextBeat){
-      if(rr.nextBeat)rrBeat();
+    if(rr.valve&&(crossSys||crossDia)&&rr.nextBeat&&ts-(rr.lastBeat||0)>0.35*60000/hr){
+      rrBeat(crossSys?sys:dia+0.5);rr.lastBeat=ts;
+      let r=60/hr;if(S.rhythm==="afib"||S.rhythm==="afibLBBB"||S.arrhythmic)r*=rnd(0.65,1.45);
+      rr.nextBeat=ts+r*1000;
+    }else if(ts>=rr.nextBeat){
+      if(rr.nextBeat){rrBeat();rr.lastBeat=ts}
       let r=60/hr;if(S.rhythm==="afib"||S.rhythm==="afibLBBB"||S.arrhythmic)r*=rnd(0.65,1.45);
       rr.nextBeat=ts+r*1000;
     }
