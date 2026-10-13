@@ -150,7 +150,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .rrkeys{display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap}
 .ball{border:0;width:96px;height:96px;border-radius:46% 46% 50% 50%/40% 40% 60% 60%;background:radial-gradient(circle at 38% 30%,#4a4a4a,#1b1b1b 70%);box-shadow:0 8px 0 #000,0 12px 20px #0008,inset 0 2px 2px #fff3;color:#bbb;font:700 13px -apple-system}
 .ball:active,.ball.sq{transform:scale(.9,.84) translateY(4px);box-shadow:0 3px 0 #000}
-.valve{border:0;border-radius:14px;background:var(--key);padding:12px 14px;font-weight:700;min-width:118px}
+.valve{border:0;border-radius:16px;background:var(--key);padding:18px 14px;font-weight:700;width:170px;font-size:17px;transition:transform .08s}
+.valve:active,.valve.sq{transform:scale(.95);filter:brightness(1.25)}
 .valve.on{background:#0a84ff;color:#fff}
 /* Pupillen */
 .eyes{width:100%;max-width:440px;display:flex;justify-content:space-around;align-items:center;gap:8px;background:radial-gradient(ellipse at center,#2a2420,#0d0b0a 75%);border-radius:24px;padding:26px 8px 18px;touch-action:none}
@@ -280,7 +281,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     <div class="rr"><svg id="rrGauge" viewBox="0 0 200 200"></svg></div>
     <div class="rrkeys">
       <button class="ball" id="rrPump">Pumpen</button>
-      <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;flex-direction:column;gap:14px">
         <button class="valve" id="rrValve">Ventil öffnen</button>
         <button class="valve" id="rrDump">Luft ablassen</button>
       </div>
@@ -829,8 +830,7 @@ document.addEventListener("click",e=>{
     case "pBig":pagerBig();return;
     case "pInfo":pagerInfo();return;
     case "rrPump":return;
-    case "rrValve":rrValve();return;
-    case "rrDump":rrDump();return;
+    case "rrValve":case "rrDump":return;
     case "pAux":if(pg.mode!=="alarm"){unlock();startAlarm(true)}return;
     case "arm":unlock();setTimeout(armCheck,200);return;
   }
@@ -843,6 +843,7 @@ document.addEventListener("click",e=>{
 });
 // Pumpball reagiert sofort beim Berühren, auch bei schnellem Pumpen
 $("rrPump").addEventListener("pointerdown",ev=>{ev.preventDefault();rrPump()});
+[["rrValve",rrValve],["rrDump",rrDump]].forEach(([id,fn])=>$(id).addEventListener("pointerdown",ev=>{ev.preventDefault();const b=$(id);b.classList.add("sq");setTimeout(()=>b.classList.remove("sq"),120);fn()}));
 ["gesturestart","dblclick"].forEach(n=>document.addEventListener(n,e=>e.preventDefault()));
 $("codeInput").addEventListener("keydown",e=>{if(e.key==="Enter")$("codeBtn").click()});
 
