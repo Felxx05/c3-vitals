@@ -144,6 +144,24 @@ button{font:inherit;color:inherit;cursor:pointer}
 .pager .model b{color:#e2232a}
 
 
+/* CO-Melder (am Rucksack getragener Kohlenmonoxid-Warner) */
+.tile.coal{animation:coT .5s steps(1) infinite}
+@keyframes coT{0%{background:#5a1010;border-color:#ff3b30}50%{background:var(--panel);border-color:var(--line)}}
+.co{width:min(250px,64vw);aspect-ratio:.58;position:relative;border-radius:14% / 9%;background:linear-gradient(160deg,#ffbf3f,#f29a12 55%,#c9760a);box-shadow:0 14px 30px #000c,inset 0 2px 3px #fff6,inset 0 -4px 8px #0004;container-type:inline-size}
+.co .leds{position:absolute;top:4%;left:0;right:0;display:flex;justify-content:center;gap:30%}
+.co .leds i{width:11cqw;height:11cqw;border-radius:50%;background:#5a1414;box-shadow:inset 0 2px 3px #000}
+.co.alarm .leds i{animation:coL .25s steps(1) infinite}.co.alarm .leds i+i{animation-delay:.125s}
+@keyframes coL{0%{background:#ff2a2a;box-shadow:0 0 6cqw #ff2a2a}50%{background:#5a1414;box-shadow:inset 0 2px 3px #000}}
+.co .win{position:absolute;left:10%;right:10%;top:17%;height:33%;border-radius:6cqw;background:#2a2c2f;padding:4cqw;box-shadow:inset 0 2px 5px #000c}
+.co .lcd2{height:100%;border-radius:3cqw;background:linear-gradient(180deg,#c9d0c4,#aeb6a8);color:#1c1f1a;font-family:ui-monospace,Menlo,monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 2px 5px #0006}
+.co.alarm .lcd2{animation:lit .5s steps(1) infinite}
+.co .lcd2 b{font:800 24cqw/1 ui-monospace,Menlo,monospace}
+.co .lcd2 span{font:800 8cqw ui-monospace,Menlo,monospace;display:flex;gap:6cqw}
+.co .lab{position:absolute;top:53%;left:0;right:0;text-align:center;font:900 13cqw -apple-system,Helvetica,Arial;color:#1d1d1f;letter-spacing:1cqw}
+.co .okb{position:absolute;left:30%;width:40%;top:68%;aspect-ratio:1;border:0;border-radius:50%;background:radial-gradient(circle at 40% 35%,#4a4d52,#2b2d30 60%,#1d1f21);box-shadow:0 2.2cqw 0 #111,0 4cqw 6cqw #0009,inset 0 1px 1px #fff4;color:#ddd;font:800 9cqw -apple-system}
+.co .okb:active{transform:translateY(2cqw);box-shadow:0 .4cqw 0 #111}
+.co .grill{position:absolute;bottom:5%;left:25%;right:25%;height:3%;background:repeating-linear-gradient(90deg,#0006 0 3cqw,transparent 3cqw 6cqw);border-radius:2cqw}
+
 /* Blutdruck (Handmessgerät) */
 .rr{width:min(300px,76vw);aspect-ratio:1;position:relative}
 .rr svg{width:100%;height:100%}
@@ -194,6 +212,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     <button class="tile" data-go="vBp" style="--c:var(--pink)"><svg viewBox="0 0 48 48"><circle cx="20" cy="22" r="14"/><path d="M20 22l7-6"/><path d="M34 22h4a5 5 0 0 1 5 5v6"/><ellipse cx="43" cy="39" rx="4" ry="6"/></svg>Blutdruck<small>manuell</small></button>
     <button class="tile" data-go="vPu" style="--c:var(--yellow)"><svg viewBox="0 0 48 48"><path d="M4 24c6-9 13-13 20-13s14 4 20 13c-6 9-13 13-20 13S10 33 4 24z"/><circle cx="24" cy="24" r="7"/><circle cx="24" cy="24" r="2.5"/></svg>Pupillen<small>Pupillenleuchte</small></button>
     <button class="tile" data-go="vPg" style="--c:var(--orange)"><svg viewBox="0 0 48 48"><rect x="10" y="6" width="28" height="38" rx="6"/><rect x="15" y="11" width="18" height="12" rx="2"/><circle cx="24" cy="33" r="5"/><circle cx="34" cy="10" r="1.5"/></svg>Melder<small>Joh. WSF 303/83-01</small></button>
+    <button class="tile" data-go="vCo" id="coTile" style="--c:#ffb340"><svg viewBox="0 0 48 48"><rect x="12" y="4" width="24" height="40" rx="6"/><rect x="16" y="12" width="16" height="10" rx="2"/><circle cx="19" cy="8" r="1.4"/><circle cx="29" cy="8" r="1.4"/><circle cx="24" cy="33" r="4"/></svg>CO-Melder<small>Kohlenmonoxid-Warner</small></button>
   </div>
   <div class="foot"><span id="codeInfo"></span><br><button class="lnk" id="codeReset">Anderen Monitor koppeln</button></div>
 </section>
@@ -274,6 +293,21 @@ button{font:inherit;color:inherit;cursor:pointer}
 </section>
 
 
+<!-- CO-Melder -->
+<section class="view" id="vCo">
+  <div class="top"><button class="back" data-go="vHome"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Zurück</button><h1>CO-Melder</h1></div>
+  <div class="stage">
+    <div class="co" id="coDev">
+      <div class="leds"><i></i><i></i></div>
+      <div class="win"><div class="lcd2" id="coLcd"></div></div>
+      <div class="lab">CO</div>
+      <button class="okb" id="coOk" aria-label="Quittieren">OK</button>
+      <div class="grill"></div>
+    </div>
+    <div class="hint" id="coHint">Zeigt die Kohlenmonoxid-Konzentration in ppm. Bei Alarm: OK drückt den Ton weg, den Alarm beendet die Steuerung.</div>
+  </div>
+</section>
+
 <!-- Blutdruck -->
 <section class="view" id="vBp">
   <div class="top"><button class="back" data-go="vHome"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Zurück</button><h1>Blutdruck manuell</h1></div>
@@ -308,7 +342,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 const $=id=>document.getElementById(id);
 const RIC="Joh. WSF 303/83-01";
 const BROKERS=["wss://mqtt.eclipseprojects.io:443/mqtt","wss://broker.emqx.io:8084/mqtt","wss://broker.hivemq.com:8884/mqtt","wss://test.mosquitto.org:8081/mqtt"];
-const DEF={bloodGlucose:5.8,temperature:36.8,heartRate:75,respRate:14,rhythm:"sinus",hasPulse:true,arrhythmic:false,lungSound:"normal",lungSide:"beidseits",heartSound:"normal",abdomenSound:"normal",pupilRight:"normal",pupilLeft:"normal",pupilReactRight:"prompt",pupilReactLeft:"prompt",nibpSys:120,nibpDia:80,pagerText:"",pagerAlarmID:0,pagerAlarmAt:0};
+const DEF={bloodGlucose:5.8,temperature:36.8,heartRate:75,respRate:14,rhythm:"sinus",hasPulse:true,arrhythmic:false,lungSound:"normal",lungSide:"beidseits",heartSound:"normal",abdomenSound:"normal",pupilRight:"normal",pupilLeft:"normal",pupilReactRight:"prompt",pupilReactLeft:"prompt",nibpSys:120,nibpDia:80,coPpm:0,coAlarm:false,pagerText:"",pagerAlarmID:0,pagerAlarmAt:0};
 let S={...DEF};
 function store(k,v){try{v===null?localStorage.removeItem(k):localStorage.setItem(k,typeof v==="string"?v:JSON.stringify(v))}catch(e){}}
 function stored(k,def){try{const v=localStorage.getItem(k);if(v===null)return def;try{return JSON.parse(v)}catch(e){return v}}catch(e){return def}}
@@ -642,6 +676,28 @@ function armCheck(){
 setInterval(armCheck,1500);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(armCheck,300)});
 
+// ---------- CO-Melder ----------
+// Wert und Alarm kommen aus der Steuerung. OK schaltet nur den Ton ab, LEDs blinken weiter.
+const co={alarm:false,muted:false,timer:null};
+function coTone(){
+  const c=audio();if(!c)return;if(c.state!=="running")c.resume();
+  let t=c.currentTime+0.03;for(let i=0;i<4;i++){tone(t,0.09,master,{f:3100,type:"square",gain:0.17});t+=0.16}
+}
+function coRender(){
+  const ppm=Math.max(0,Math.round(+S.coPpm||0)),lvl=ppm>=60?"A2":ppm>=30?"A1":"";
+  $("coDev").classList.toggle("alarm",co.alarm);
+  $("coTile").classList.toggle("coal",co.alarm);
+  $("coLcd").innerHTML=`<span><em style="font-style:normal">${co.alarm?(lvl||"AL"):"CO"}</em><em style="font-style:normal">${co.alarm&&co.muted?"🔇":""}</em></span><b>${ppm}</b><span>ppm</span>`;
+}
+function handleCo(){
+  const on=!!S.coAlarm;
+  if(on&&!co.alarm){co.alarm=true;co.muted=false;go("vCo");coTone();clearInterval(co.timer);co.timer=setInterval(()=>{if(!co.muted)coTone()},1000);
+    try{navigator.vibrate&&navigator.vibrate([300,150,300,150,300])}catch(e){}armCheck()}
+  else if(!on&&co.alarm){co.alarm=false;co.muted=false;clearInterval(co.timer);co.timer=null}
+  coRender();
+}
+function coOk(){if(co.alarm)co.muted=true;beep(2600,0.04);coRender()}
+
 // ---------- Verbindung (MQTT über öffentliche Broker, wie die Steuerseite) ----------
 let code=null,client=null,brokerIndex=0,everConnected=false,brokerTimer=null,lastSeen=0,monitorName="FM 112";
 const devId=stored("vitDevId",null)||(()=>{const id="v"+Math.random().toString(36).slice(2,10);store("vitDevId",id);return id})();
@@ -651,7 +707,7 @@ function onStatus(j){
   lastSeen=j.sentAt?Date.parse(j.sentAt):Date.now();
   monitorName=j.monitorName||monitorName;
   S={...DEF,...j.state};
-  handlePager();checkOnline();
+  handlePager();handleCo();checkOnline();
 }
 window.__vitalsStatus=onStatus; // für Tests
 function hello(){if(client&&client.connected)client.publish(topic("vitals"),JSON.stringify({id:devId,name:"FM Vitals"}))}
@@ -831,6 +887,7 @@ document.addEventListener("click",e=>{
     case "pInfo":pagerInfo();return;
     case "rrPump":return;
     case "rrValve":case "rrDump":return;
+    case "coOk":return;
     case "pAux":if(pg.mode!=="alarm"){unlock();startAlarm(true)}return;
     case "arm":unlock();setTimeout(armCheck,200);return;
   }
@@ -843,11 +900,12 @@ document.addEventListener("click",e=>{
 });
 // Pumpball reagiert sofort beim Berühren, auch bei schnellem Pumpen
 $("rrPump").addEventListener("pointerdown",ev=>{ev.preventDefault();rrPump()});
+$("coOk").addEventListener("pointerdown",ev=>{ev.preventDefault();coOk()});
 [["rrValve",rrValve],["rrDump",rrDump]].forEach(([id,fn])=>$(id).addEventListener("pointerdown",ev=>{ev.preventDefault();const b=$(id);b.classList.add("sq");setTimeout(()=>b.classList.remove("sq"),120);fn()}));
 ["gesturestart","dblclick"].forEach(n=>document.addEventListener(n,e=>e.preventDefault()));
 $("codeInput").addEventListener("keydown",e=>{if(e.key==="Enter")$("codeBtn").click()});
 
-bzRender();thRender();renderPager();rrGauge();rrNeedle();rrRender();puInit();requestAnimationFrame(rrLoop);requestAnimationFrame(puLoop);
+bzRender();thRender();renderPager();coRender();rrGauge();rrNeedle();rrRender();puInit();requestAnimationFrame(rrLoop);requestAnimationFrame(puLoop);
 const c0=new URLSearchParams(location.search).get("code")||stored("vitCode",null);
 if(c0)start(String(c0));else go("vCode");
 </script>
